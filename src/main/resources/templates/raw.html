@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Magic Spreadsheet - Spring Boot style</title>
+    <link rel="stylesheet" href="/main.css" />
+</head>
+<body>
+
+    <h1>Magic Spreadsheet - Spring Boot style</h1>
+
+    <div>
+        <table>
+            <thead>
+            <tr>
+                <th></th><th>Status</th><th>Campaign</th><th>Impressions</th><th>Clicks</th><th>Avg. CPC</th><th>Spent</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="data : ${amsData}">
+                <td th:text="${data.rowNum}" />
+                <td th:text="${data.status}" />
+                <td th:text="${data.campaignName}" />
+                <td th:text="${data.impressions}" />
+                <td th:text="${data.clicks}" />
+                <td th:text="${data.averageCpc}" />
+                <td th:text="${data.spend}" />
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+</body>
+</html>

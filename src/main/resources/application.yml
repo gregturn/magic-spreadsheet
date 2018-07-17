@@ -1,0 +1,7 @@
+logging:
+  level:
+    reactor.core: TRACE
+    reactor.util: TRACE
+    org.springframework:
+      web: TRACE
+      data: INFO
