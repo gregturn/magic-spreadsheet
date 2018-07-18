@@ -13,7 +13,9 @@ This application lets you do a lot of the same, but with even more flexibility.
 
 == Running Magic Spreadsheet
 
-. Clone this repo
+. Clone this repo (or https://github.com/gregturn/magic-spreadsheet/archive/master.zip[download] and unzip it).
+. Open a terminal window.
+. Switch to the proper directory.
 . Execute `./mvnw clean spring-boot:run`
 . Navigate to http://localhost:8080 (with your web browser)
 . Import YOUR instance of the Magic Spreadsheet.
