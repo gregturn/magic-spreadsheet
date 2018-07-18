@@ -1,0 +1,20 @@
+image:https://travis-ci.org/gregturn/magic-spreadsheet.svg?branch=master["Build Status", link="https://travis-ci.org/gregturn/magic-spreadsheet"]
+
+== Magic Spreadsheet
+
+If you've...
+
+* Read https://amzn.to/2NqwHDN[Mastering AMS Ads] by Brian Meeks
+* Joined https://www.facebook.com/groups/407283052948198[Mastering Amazon Ads: An Author's Guide - Beta Group] on Facebook
+
+...then you MIGHT have downloaded Brian Meeks' miraculous Magic Spreadsheet.
+
+This application lets you do a lot of the same, but with even more flexibility.
+
+== Running Magic Spreadsheet
+
+. Clone this repo
+. Execute `./mvnw clean spring-boot:run`
+. Navigate to http://localhost:8080 (with your web browser)
+. Import YOUR instance of the Magic Spreadsheet.
+. Enjoy!
