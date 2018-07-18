@@ -12,7 +12,14 @@
     <ul>
         <li><a th:href="@{/ads}">Ads</a></li>
         <li><a th:href="@{/rawdata}">Raw Data</a></li>
+        <li><a th:href="@{/conversions}">Conversion Data</a></li>
     </ul>
+
+    <form method="post" enctype="multipart/form-data" action="/upload">
+        <p><input type="file" name="spreadsheet" /></p>
+        <p><input type="submit" value="Upload" /></p>
+    </form>
+
 
 </body>
 </html>
