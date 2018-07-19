@@ -14,9 +14,11 @@ This application lets you do a lot of the same, but with even more flexibility.
 == Prerequisites to running Magic Spreadsheet
 
 * You MUST install a copy of MongoDB.
-** Download and install via https://docs.mongodb.com/manual/administration/install-community/
-** If you are a developer with https://brew.sh/[Homebrew], simply use `brew install mongodb`
-* You also need a copy of https://java.com/en/download/[Java] to physically run the app.
+** Option A) Download and install via https://docs.mongodb.com/manual/administration/install-community/
+** Option B) If you are a developer with https://brew.sh/[Homebrew], simply use `brew install mongodb`
+* You also need a copy of Java.
+** You need to install the http://www.oracle.com/technetwork/java/javase/downloads/index.html[Java SE] (Standard Edition). The app is built using Java SE 8, so no need for anything newer. And when picking between "JRE" or "JDK", pick "JDK".
+** If you're a developer using https://sdkman.io/[SdkMan] to manage your copy of Java, simply use `sdk install java 8.0.181-oracle`.
 
 == Running Magic Spreadsheet
 
