@@ -43,7 +43,7 @@ class BookDTO {
 		if (this.adPerformanceStats.getClicks() == 0.0) {
 			return "No clicks were used in the selling of this product";
 		} else {
-			return "1 in " + this.adPerformanceStats.getClicks() / getUnitsSoldTotal();
+			return "1:" + this.adPerformanceStats.getClicks() / getUnitsSoldTotal();
 		}
 	}
 

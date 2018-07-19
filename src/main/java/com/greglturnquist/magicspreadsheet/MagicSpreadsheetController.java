@@ -20,7 +20,12 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Date;
+import java.util.Optional;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -30,6 +35,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseBody;
 
@@ -71,17 +77,72 @@ public class MagicSpreadsheetController {
 	}
 
 	@GetMapping("/rawdata")
-	Mono<String> raw(Model model) {
+	Mono<String> raw(@RequestParam(name = "window", required = false) Optional<String> optionalWindow, Model model) {
 
-		model.addAttribute("amsData", amsDataRepository.findAll().map(AmsDataDTO::new));
+		String window = optionalWindow.orElse("all");
+		
+		model.addAttribute("filterOptions", Arrays.asList(
+			new FilterOption("all", "Lifetime", window.equals("all")),
+			new FilterOption("30days", "Last 30 days", window.equals("30days")),
+			new FilterOption("15days", "Last 15 days", window.equals("15days"))
+		));
+
+		if ("all".equals(window)) {
+
+			model.addAttribute("amsData", amsDataRepository
+				.findAll()
+				.map(AmsDataDTO::new));
+		} else if ("15days".equals(window)) {
+
+			model.addAttribute("amsData", amsDataRepository
+				.findByDateAfter(Date.from(Instant.now().minus(Duration.ofDays(15))))
+				.map(AmsDataDTO::new));
+		} else if ("30days".equals(window)) {
+			
+			model.addAttribute("amsData", amsDataRepository
+				.findByDateAfter(Date.from(Instant.now().minus(Duration.ofDays(30))))
+				.map(AmsDataDTO::new));
+		}
 
 		return Mono.just("raw");
 	}
 
 	@GetMapping("/conversions")
+	Mono<String> conversions(@RequestParam(name = "window", required = false) Optional<String> optionalWindow, Model model) {
+
+		String window = optionalWindow.orElse("all");
+
+		model.addAttribute("filterOptions", Arrays.asList(
+			new FilterOption("all", "Lifetime", window.equals("all")),
+			new FilterOption("30days", "Last 30 days", window.equals("30days")),
+			new FilterOption("15days", "Last 15 days", window.equals("15days"))
+		));
+
+		if ("all".equals(window)) {
+
+			model.addAttribute("conversionData",
+				adService.clicksToConvert(Optional.empty())
+					.sort(Comparator.comparing(BookDTO::getTitle)));
+		} else if ("15days".equals(window)) {
+
+			model.addAttribute("conversionData",
+				adService.clicksToConvert(Optional.of(Date.from(Instant.now().minus(Duration.ofDays(15)))))
+					.sort(Comparator.comparing(BookDTO::getTitle)));
+		} else if ("30days".equals(window)) {
+
+			model.addAttribute("conversionData",
+				adService.clicksToConvert(Optional.of(Date.from(Instant.now().minus(Duration.ofDays(30)))))
+					.sort(Comparator.comparing(BookDTO::getTitle)));
+		}
+
+		return Mono.just("conversions");
+	}
+
+	@GetMapping("/conversionsRaw")
 	@ResponseBody
-	Flux<BookDTO> conversions() {
-		return adService.clicksToConvert()
+	Flux<BookDTO> conversionsRaw() {
+		
+		return adService.clicksToConvert(Optional.empty())
 			.sort(Comparator.comparing(BookDTO::getTitle));
 	}
 

@@ -17,6 +17,8 @@ package com.greglturnquist.magicspreadsheet;
 
 import lombok.RequiredArgsConstructor;
 
+import java.util.Date;
+
 /**
  * @author Greg Turnquist
  */
@@ -59,5 +61,9 @@ public class AmsDataDTO {
 		return this.object.getAverageCpc()
 			.map(averageCpc -> "$" + averageCpc * this.object.getClicks().orElse(0.0))
 			.orElse("");
+	}
+
+	public Date getDate() {
+		return this.object.getDate();
 	}
 }

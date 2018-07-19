@@ -10,10 +10,31 @@
     <h1>Magic Spreadsheet - Spring Boot style</h1>
 
     <div>
+        <ul>
+            <li><a th:href="@{/}">Home</a></li>
+        </ul>
+    </div>
+
+    <div>
+        <form>
+            <fieldset>
+                <p>Filter:</p>
+                <div th:each="filterOption : ${filterOptions}">
+                    <input type="radio" th:id="${filterOption.window}" name="window" th:value="${filterOption.window}" th:checked="${filterOption.checked}" />
+                    <label th:for="${filterOption.window}" th:text="${filterOption.label}" />
+                </div>
+                <div>
+                    <button type="submit">Apply</button>
+                </div>
+            </fieldset>
+        </form>
+    </div>
+    
+    <div>
         <table>
             <thead>
             <tr>
-                <th></th><th>Status</th><th>Campaign</th><th>Impressions</th><th>Clicks</th><th>Avg. CPC</th><th>Spent</th>
+                <th></th><th>Status</th><th>Campaign</th><th>Impressions</th><th>Clicks</th><th>Avg. CPC</th><th>Spent</th><th>Date</th>
             </tr>
             </thead>
             <tbody>
@@ -25,6 +46,7 @@
                 <td th:text="${data.clicks}" />
                 <td th:text="${data.averageCpc}" />
                 <td th:text="${data.spend}" />
+                <td th:text="${data.date}" />
             </tr>
             </tbody>
         </table>

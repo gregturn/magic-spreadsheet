@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Magic Spreadsheet - Spring Boot style</title>
+    <link rel="stylesheet" href="/main.css" />
+</head>
+<body>
+
+    <h1>Magic Spreadsheet - Spring Boot style</h1>
+
+    <div>
+        <ul>
+            <li><a th:href="@{/}">Home</a></li>
+        </ul>
+    </div>
+
+    <div>
+        <form>
+            <fieldset>
+                <p>Filter:</p>
+                <div th:each="filterOption : ${filterOptions}">
+                    <input type="radio" th:id="${filterOption.window}" name="window" th:value="${filterOption.window}" th:checked="${filterOption.checked}" />
+                    <label th:for="${filterOption.window}" th:text="${filterOption.label}" />
+                </div>
+                <div>
+                    <button type="submit">Apply</button>
+                </div>
+            </fieldset>
+        </form>
+    </div>
+    
+    <div>
+        <table>
+            <thead>
+            <tr>
+                <th>Title</th>
+                <th>Impressions</th>
+                <th>Clicks</th>
+                <th>Units Sold</th>
+                <th>Total Page Reads</th>
+                <th>Units Sold via page reads</th>
+                <th>Total Units Sold</th>
+                <th>Conversion Rate</th>
+                <th>Total Ad Spend</th>
+                <th>Total Earnings</th>
+                <th>ROI</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="conversion : ${conversionData}">
+                <td th:text="${conversion.title}" />
+                <td th:text="${conversion.adPerformanceStats.impressions}" />
+                <td th:text="${conversion.adPerformanceStats.clicks}" />
+                <td th:text="${conversion.unitsSold}" />
+                <td th:text="${conversion.totalPageReads}" />
+                <td th:text="${conversion.unitsSoldViaPageReads}" />
+                <td th:text="${conversion.unitsSoldTotal}" />
+                <td th:text="${conversion.conversionRate}" />
+                <td th:text="${conversion.totalAdSpend}" />
+                <td th:text="${conversion.totalEarnings}" />
+                <td th:text="${conversion.ROI}" />
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+</body>
+</html>

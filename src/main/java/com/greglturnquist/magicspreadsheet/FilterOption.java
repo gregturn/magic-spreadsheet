@@ -15,20 +15,17 @@
  */
 package com.greglturnquist.magicspreadsheet;
 
-import java.util.Date;
-
-import reactor.core.publisher.Flux;
-import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.Value;
 
 /**
  * @author Greg Turnquist
  */
-interface AmsDataRepository extends ReactiveMongoRepository<AmsDataObject, String> {
+@Value
+@RequiredArgsConstructor
+class FilterOption {
 
-	Flux<AmsDataObject> findByCampaignName(String campaignName);
-
-	Flux<AmsDataObject> findByCampaignNameAndDateAfter(String campaignName, Date date);
-
-	Flux<AmsDataObject> findByDateAfter(Date date);
-
+	private final String window;
+	private final String label;
+	private final boolean checked;
 }
