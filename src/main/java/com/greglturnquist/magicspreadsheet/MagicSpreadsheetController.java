@@ -17,9 +17,6 @@ package com.greglturnquist.magicspreadsheet;
 
 import lombok.extern.slf4j.Slf4j;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
@@ -29,7 +26,6 @@ import java.util.Optional;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -150,46 +146,17 @@ public class MagicSpreadsheetController {
 	Mono<String> upload(@RequestPart(name = "spreadsheet") Flux<FilePart> spreadsheet) {
 
 		return spreadsheet
-			.flatMap(file -> {
-				log.info("About to parse " + file.filename() + "...");
-
-				Mono<Void> uploadFile = Mono.just(Paths.get(UPLOAD_ROOT, file.filename()).toFile())
-					.log("copyfile-fullPath")
-					.map(destFile -> {
-						try {
-							new File(UPLOAD_ROOT).mkdirs();
-							destFile.createNewFile();
-							return destFile;
-						} catch (IOException e) {
-							throw new RuntimeException(e);
-						}
-					})
-					.log("copyfile-newFile")
-					.flatMap(file::transferTo)
-					.log("copyfile-transferTo");
-
-				Mono<Void> ingestSpreadsheet = Mono.just(Paths.get(UPLOAD_ROOT, file.filename()).toFile())
-					.map(FileSystemResource::new)
-					.map(fileSystemResource -> {
-						try {
-							return fileSystemResource.getInputStream();
-						} catch (IOException e) {
-							throw new RuntimeException(e);
-						}
-					})
-					.map(inputStream -> {
-						try {
-							loaderService.loadSpreadsheet(inputStream);
-							return Mono.empty();
-						} catch (IOException e) {
-							throw new RuntimeException(e);
-						}
-					})
-					.then();
-
-				return uploadFile.then(ingestSpreadsheet);
-			})
+			.flatMap(loaderService::importMagicSpreadsheet)
 			.log("upload-done")
+			.then(Mono.just("redirect:/"));
+	}
+
+	@PostMapping("/import-ams")
+	Mono<String> importAmsReport(@RequestPart(name = "csvFile") Flux<FilePart> amsReport) {
+
+		return amsReport
+			.flatMap(loaderService::importAmsReport)
+			.log("import-done")
 			.then(Mono.just("redirect:/"));
 	}
 }

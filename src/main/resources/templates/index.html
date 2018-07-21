@@ -15,10 +15,21 @@
         <li><a th:href="@{/conversions}">Conversion Data</a></li>
     </ul>
 
-    <form method="post" enctype="multipart/form-data" action="/upload">
-        <p><input type="file" name="spreadsheet" /></p>
-        <p><input type="submit" value="Upload" /></p>
-    </form>
+    <p>
+        Load new Magic Spreadsheet (and wipe out existing data)
+        <form method="post" enctype="multipart/form-data" action="/upload">
+            <p><input type="file" name="spreadsheet" /></p>
+            <p><input type="submit" value="Upload" /></p>
+        </form>
+    </p>
+
+    <p>
+        Import new AMS report
+        <form method="post" enctype="multipart/form-data" action="/import-ams">
+            <p><input type="file" name="csvFile" /></p>
+            <p><input type="submit" value="Upload" /></p>
+        </form>
+    </p>
 
     <footer>(C) 2018 Greg L. Turnquist All Rights Reserved "Use the <a href="https://github.com/gregturn/magic-spreadsheet">source</a>, Luke!"</footer>
 </body>

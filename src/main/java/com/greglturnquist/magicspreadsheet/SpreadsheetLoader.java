@@ -15,21 +15,33 @@
  */
 package com.greglturnquist.magicspreadsheet;
 
+import java.time.Instant;
+import java.util.Date;
+
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 
 /**
  * @author Greg Turnquist
  */
-//@Configuration
+@Configuration
 class SpreadsheetLoader {
 
-	@Bean
-	CommandLineRunner load(LoaderService loaderService) {
+//	@Bean
+	CommandLineRunner loadMagicSpreadsheet(LoaderService loaderService) {
 		return args -> {
 			ClassPathResource magicSpreadsheet = new ClassPathResource("sample-magic-spreadsheet.xlsm");
-			loaderService.loadSpreadsheet(magicSpreadsheet.getInputStream());
+			loaderService.loadMagicSpreadsheet(magicSpreadsheet.getInputStream());
+		};
+	}
+
+//	@Bean
+	CommandLineRunner importAmsReport(LoaderService loaderService) {
+		return args -> {
+			ClassPathResource amsReport = new ClassPathResource("sample-ams-report.csv");
+			loaderService.loadAmsReport(LoaderService.toReader(amsReport.getFile().getAbsolutePath()), Date.from(Instant.now()))
+				.subscribe();
 		};
 	}
 
