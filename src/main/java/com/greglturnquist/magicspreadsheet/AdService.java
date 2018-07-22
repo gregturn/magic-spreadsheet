@@ -135,10 +135,14 @@ class AdService {
 
 	private Mono<Double> totalEarnings(String bookTitle, Optional<Date> date) {
 
-		Mono<Double> totalRoyalties = ebookRoyaltyRepository.findByTitle(bookTitle)
+		Mono<Double> totalRoyalties = date
+			.map(date1 -> ebookRoyaltyRepository.findByTitleAndRoyaltyDateAfter(bookTitle, date1))
+			.orElse(ebookRoyaltyRepository.findByTitle(bookTitle))
 			.reduce(0.0, (royalties, ebookRoyaltyDataObject) -> royalties + ebookRoyaltyDataObject.getRoyalty());
 
-		Mono<Double> totalPagesRead = kenpReadRepository.findByTitle(bookTitle)
+		Mono<Double> totalPagesRead = date
+			.map(date1 -> kenpReadRepository.findByTitleAndOrderDateAfter(bookTitle, date1))
+			.orElse(kenpReadRepository.findByTitle(bookTitle))
 			.reduce(0.0, (pagesRead, kenpReadData) -> pagesRead + kenpReadData.getPagesRead());
 
 		return Mono.zip(totalRoyalties, totalPagesRead, (royalties, pagesRead) -> {

@@ -84,6 +84,7 @@ public class MagicSpreadsheetController {
 		
 		model.addAttribute("filterOptions", Arrays.asList(
 			new FilterOption("all", "Lifetime", window.equals("all")),
+			new FilterOption("90days", "Last 90 days", window.equals("90days")),
 			new FilterOption("30days", "Last 30 days", window.equals("30days")),
 			new FilterOption("15days", "Last 15 days", window.equals("15days"))
 		));
@@ -93,15 +94,23 @@ public class MagicSpreadsheetController {
 			model.addAttribute("amsData", amsDataRepository
 				.findAll()
 				.map(AmsDataDTO::new));
+
+		} else if ("90days".equals(window)) {
+
+			model.addAttribute("amsData", amsDataRepository
+				.findByDateAfter(Date.from(Instant.now().minus(Duration.ofDays(90))))
+				.map(AmsDataDTO::new));
+
+		} else if ("30days".equals(window)) {
+
+			model.addAttribute("amsData", amsDataRepository
+				.findByDateAfter(Date.from(Instant.now().minus(Duration.ofDays(30))))
+				.map(AmsDataDTO::new));
+
 		} else if ("15days".equals(window)) {
 
 			model.addAttribute("amsData", amsDataRepository
 				.findByDateAfter(Date.from(Instant.now().minus(Duration.ofDays(15))))
-				.map(AmsDataDTO::new));
-		} else if ("30days".equals(window)) {
-			
-			model.addAttribute("amsData", amsDataRepository
-				.findByDateAfter(Date.from(Instant.now().minus(Duration.ofDays(30))))
 				.map(AmsDataDTO::new));
 		}
 
@@ -115,6 +124,7 @@ public class MagicSpreadsheetController {
 
 		model.addAttribute("filterOptions", Arrays.asList(
 			new FilterOption("all", "Lifetime", window.equals("all")),
+			new FilterOption("90days", "Last 90 days", window.equals("90days")),
 			new FilterOption("30days", "Last 30 days", window.equals("30days")),
 			new FilterOption("15days", "Last 15 days", window.equals("15days"))
 		));
@@ -124,15 +134,23 @@ public class MagicSpreadsheetController {
 			model.addAttribute("conversionData",
 				adService.clicksToConvert(Optional.empty())
 					.sort(Comparator.comparing(BookDTO::getTitle)));
-		} else if ("15days".equals(window)) {
+
+		} else if ("90days".equals(window)) {
 
 			model.addAttribute("conversionData",
-				adService.clicksToConvert(Optional.of(Date.from(Instant.now().minus(Duration.ofDays(15)))))
+				adService.clicksToConvert(Optional.of(Date.from(Instant.now().minus(Duration.ofDays(90)))))
 					.sort(Comparator.comparing(BookDTO::getTitle)));
+
 		} else if ("30days".equals(window)) {
 
 			model.addAttribute("conversionData",
 				adService.clicksToConvert(Optional.of(Date.from(Instant.now().minus(Duration.ofDays(30)))))
+					.sort(Comparator.comparing(BookDTO::getTitle)));
+
+		} else if ("15days".equals(window)) {
+
+			model.addAttribute("conversionData",
+				adService.clicksToConvert(Optional.of(Date.from(Instant.now().minus(Duration.ofDays(15)))))
 					.sort(Comparator.comparing(BookDTO::getTitle)));
 		}
 

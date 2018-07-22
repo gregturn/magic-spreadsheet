@@ -15,6 +15,8 @@
  */
 package com.greglturnquist.magicspreadsheet;
 
+import java.util.Date;
+
 import reactor.core.publisher.Flux;
 import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
 
@@ -24,5 +26,7 @@ import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
 interface EbookRoyaltyRepository extends ReactiveMongoRepository<EbookRoyaltyDataObject, String> {
 
 	Flux<EbookRoyaltyDataObject> findByTitle(String title);
+
+	Flux<EbookRoyaltyDataObject> findByTitleAndRoyaltyDateAfter(String title, Date royaltyDate);
 
 }
