@@ -17,12 +17,16 @@ package com.greglturnquist.magicspreadsheet;
 
 import lombok.extern.slf4j.Slf4j;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -43,6 +47,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 public class MagicSpreadsheetController {
 
 	private static String UPLOAD_ROOT = "upload-dir";
+	private static final SimpleDateFormat SIMPLE_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
 
 	private final AmsDataRepository amsDataRepository;
 	private final AdTableRepository adTableRepository;
@@ -152,11 +157,40 @@ public class MagicSpreadsheetController {
 	}
 
 	@PostMapping("/import-ams")
-	Mono<String> importAmsReport(@RequestPart(name = "csvFile") Flux<FilePart> amsReport) {
+	Mono<String> importAmsReport(@RequestPart(name = "csvFile") Flux<FilePart> amsReport,
+								 @RequestPart(name = "date") String date) {
 
 		return amsReport
-			.flatMap(loaderService::importAmsReport)
+			.flatMap(csvFilePart -> {
+				if (date.equals("")) {
+					return loaderService.importAmsReport(csvFilePart,
+						optionalDateInFilename(csvFilePart.filename()).orElse(Date.from(Instant.now())));
+				} else {
+					try {
+						return loaderService.importAmsReport(csvFilePart, SIMPLE_DATE_FORMAT.parse(date));
+					} catch (ParseException e) {
+						throw new RuntimeException(e);
+					}
+				}
+			})
 			.log("import-done")
 			.then(Mono.just("redirect:/"));
+	}
+
+	private Optional<Date> optionalDateInFilename(String filename) {
+
+
+		Pattern datePattern = Pattern.compile("\\d+-\\d+-\\d+");
+		Matcher matcher = datePattern.matcher(filename);
+
+		while (matcher.find()) {
+			try {
+				return Optional.of(SIMPLE_DATE_FORMAT.parse(matcher.group()));
+			} catch (ParseException e) {
+				return Optional.empty();
+			}
+		}
+
+		return Optional.empty();
 	}
 }

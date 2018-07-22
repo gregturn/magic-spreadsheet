@@ -28,7 +28,6 @@ import java.nio.file.Paths;
 import java.sql.Date;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -74,11 +73,11 @@ class LoaderService {
 		// TODO Delete file afterward
 	}
 
-	Mono<Void> importAmsReport(FilePart csvFilePart) {
+	Mono<Void> importAmsReport(FilePart csvFilePart, java.util.Date date) {
 
 		return uploadFile(csvFilePart, UPLOAD_ROOT)
 			.then(toReader(csvFilePart.filename(), UPLOAD_ROOT))
-			.flatMap(reader -> loadAmsReport(reader, Date.from(Instant.now())))
+			.flatMap(reader -> loadAmsReport(reader, date))
 			.then();
 	}
 
@@ -282,29 +281,27 @@ class LoaderService {
 				})
 				.log("importAms-zipWithLatestAmsRecord")
 				.flatMap(amsDataObject -> Mono.zip(
-					repository.findFirstByCampaignNameOrderByDateDesc(amsDataObject.getCampaignName()),
+					totalImpressions(amsDataObject.getCampaignName()),
+					totalClicks(amsDataObject.getCampaignName()),
 					Mono.just(amsDataObject)))
 				.log("importAms-create-newAmsRecord")
-				.map(objects -> {
-					log.info("Most recent => " + objects.getT1().toString());
-					log.info("New record => " + objects.getT2().toString());
+				.map(tuple3 -> {
+					log.info("Total impressions so far => " + tuple3.getT1());
+					log.info("Total clicks so far => " + tuple3.getT2());
+					log.info("New record => " + tuple3.getT3().toString());
 					return new AmsDataObject(
 						null,
 						-1,
-						objects.getT2().getStatus(),
-						objects.getT2().getCampaignName(),
-						objects.getT2().getType(),
-						objects.getT2().getStartDate(),
-						objects.getT2().getEndDate(),
-						objects.getT2().getBudget(),
-						objects.getT2().getSpend(),
-						objects.getT2().getImpressions()
-							.map(aDouble -> Optional.of(aDouble - objects.getT1().getImpressions().orElse(0.0)))
-							.orElse(objects.getT1().getImpressions()),
-						objects.getT2().getClicks()
-							.map(aDouble -> Optional.of(aDouble - objects.getT1().getClicks().orElse(0.0)))
-							.orElse(objects.getT1().getClicks()),
-						objects.getT2().getAverageCpc(),
+						tuple3.getT3().getStatus(),
+						tuple3.getT3().getCampaignName(),
+						tuple3.getT3().getType(),
+						tuple3.getT3().getStartDate(),
+						tuple3.getT3().getEndDate(),
+						tuple3.getT3().getBudget(),
+						tuple3.getT3().getSpend(),
+						Optional.of(tuple3.getT3().getImpressions().orElse(0.0) - tuple3.getT1()),
+						Optional.of(tuple3.getT3().getClicks().orElse(0.0) - tuple3.getT2()),
+						tuple3.getT3().getAverageCpc(),
 						date);
 				})
 				.log("importAms-logitall")
@@ -326,11 +323,23 @@ class LoaderService {
 		}
 	}
 
-	private int toInt(long value) {
+	private Mono<Double> totalImpressions(String campaignName) {
+
+		return repository.findByCampaignName(campaignName)
+			.reduce(0.0, (total, amsDataObject) -> total + amsDataObject.getImpressions().orElse(0.0));
+	}
+
+	private Mono<Double> totalClicks(String campaignName) {
+
+		return repository.findByCampaignName(campaignName)
+			.reduce(0.0, (total, amsDataObject) -> total + amsDataObject.getClicks().orElse(0.0));
+	}
+
+	private static int toInt(long value) {
 		return new Long(value).intValue();
 	}
 
-	private double toDouble(String value) {
+	private static double toDouble(String value) {
 
 		try {
 			return Double.parseDouble(value.replaceAll(",", ""));
@@ -339,7 +348,7 @@ class LoaderService {
 			return 0.0;
 		}
 	}
-	private Optional<Double> toOptionalDouble(String value) {
+	private static Optional<Double> toOptionalDouble(String value) {
 
 		try {
 			return Optional.of(Double.parseDouble(value.replaceAll(",", "")));
@@ -349,7 +358,7 @@ class LoaderService {
 		}
 	}
 
-	private Optional<java.util.Date> toOptionalDate(String value) {
+	private static Optional<java.util.Date> toOptionalDate(String value) {
 
 		try {
 			return Optional.of(DATE_FORMAT.parse(value));
@@ -387,7 +396,7 @@ class LoaderService {
 	 * @param <T>
 	 * @return
 	 */
-	private <T> Mono<T> validate(T item, Supplier<Boolean> validationRule) {
+	private static <T> Mono<T> validate(T item, Supplier<Boolean> validationRule) {
 		return validationRule.get() ? Mono.just(item) : Mono.empty();
 	}
 	
