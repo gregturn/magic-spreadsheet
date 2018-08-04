@@ -16,6 +16,7 @@
 package com.greglturnquist.magicspreadsheet;
 
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
 
 /**
@@ -25,4 +26,7 @@ interface AdTableRepository extends ReactiveMongoRepository<AdTableObject, Strin
 
 	Flux<AdTableObject> findByBookTitle(String bookTitle);
 
+	Mono<Boolean> existsByCampaignName(String campaignName);
+
+	Mono<AdTableObject> findByCampaignName(String campaignName);
 }

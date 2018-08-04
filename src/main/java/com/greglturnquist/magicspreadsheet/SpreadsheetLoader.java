@@ -15,8 +15,7 @@
  */
 package com.greglturnquist.magicspreadsheet;
 
-import java.time.Instant;
-import java.util.Date;
+import java.time.LocalDate;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Configuration;
@@ -40,7 +39,7 @@ class SpreadsheetLoader {
 	CommandLineRunner importAmsReport(LoaderService loaderService) {
 		return args -> {
 			ClassPathResource amsReport = new ClassPathResource("sample-ams-report.csv");
-			loaderService.loadAmsReport(LoaderService.toReader(amsReport.getFile().getAbsolutePath()), Date.from(Instant.now()))
+			loaderService.loadAmsReport(LoaderService.toReader(amsReport.getFile().getAbsolutePath()), LocalDate.now())
 				.subscribe();
 		};
 	}

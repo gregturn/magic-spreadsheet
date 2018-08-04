@@ -17,3 +17,19 @@ td, th {
     background-color: lightcoral;
     padding: 1em;
 }
+
+.unit-sales {
+    background: #FFFF99;
+}
+
+.unit-sales-revenue {
+    background: #F1B851;
+}
+
+.page-reads {
+    background: #46DF80;
+}
+
+.print-revenue {
+    background: #93ECF5;
+}

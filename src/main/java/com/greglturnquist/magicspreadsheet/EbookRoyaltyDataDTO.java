@@ -23,41 +23,36 @@ import java.time.LocalDate;
  * @author Greg Turnquist
  */
 @RequiredArgsConstructor
-class AdTableDTO {
+public class EbookRoyaltyDataDTO {
 
-	private final AdTableObject object;
+	private final EbookRoyaltyDataObject ebookRoyaltyDataObject;
 
-	public int getRowNum() {
-		return this.object.getRowNum();
+	public LocalDate getRoyaltyDate() {
+		return this.ebookRoyaltyDataObject.getRoyaltyDate();
 	}
 
-	public String getCampaignName() {
-		return this.object.getCampaignName();
+	public String getTitle() {
+		return this.ebookRoyaltyDataObject.getTitle();
 	}
 
-	public String getType() {
-		return this.object.getType();
+	public String getAuthorName() {
+		return this.ebookRoyaltyDataObject.getAuthorName();
 	}
 
-	public String getStart() {
-		return this.object.getStart().toString();
+	public String getASIN() {
+		return this.ebookRoyaltyDataObject.getASIN();
 	}
 
-	public String getEnd() {
-		return this.object.getEnd()
-			.map(LocalDate::toString)
-			.orElse("");
+	public double getNetUnitsSold() {
+		return this.ebookRoyaltyDataObject.getNetUnitsSold();
 	}
 
-	public double getBudget() {
-		return this.object.getBudget();
+	public double getRoyalty() {
+		return this.ebookRoyaltyDataObject.getRoyalty();
 	}
 
-	public String getBookTitle() {
-		return this.object.getBookTitle();
+	public String getCurrency() {
+		return this.ebookRoyaltyDataObject.getCurrency();
 	}
 
-	public String getSeries() {
-		return this.object.getSeries();
-	}
 }

@@ -49,7 +49,7 @@
             </thead>
             <tbody>
             <tr th:each="conversion : ${conversionData}">
-                <td th:text="${conversion.title}" />
+                <td><a th:text="${conversion.title}" th:href="@{/individualReport/{title}/(title=${conversion.title})}" /></td>
                 <td th:text="${conversion.adPerformanceStats.impressions}" />
                 <td th:text="${conversion.adPerformanceStats.clicks}" />
                 <td th:text="${conversion.unitsSold}" />

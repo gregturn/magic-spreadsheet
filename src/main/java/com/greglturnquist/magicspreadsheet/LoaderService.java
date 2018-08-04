@@ -25,9 +25,10 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.sql.Date;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -53,14 +54,20 @@ class LoaderService {
 
 	private static String UPLOAD_ROOT = "upload-dir";
 	private static SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy/MM/dd");
+	private static DateTimeFormatter DATE_FORMAT2 = DateTimeFormatter.ofPattern("yyyy/MM/dd");
 
 	private final MongoOperations operations;
-	private final AmsDataRepository repository;
+	private final AmsDataRepository amsDataRepository;
+	private final AdTableRepository adTableRepository;
+	private final EbookRoyaltyRepository ebookRoyaltyRepository;
 
-	LoaderService(MongoOperations operations, AmsDataRepository repository) {
+	LoaderService(MongoOperations operations, AmsDataRepository amsDataRepository,
+				  AdTableRepository adTableRepository, EbookRoyaltyRepository ebookRoyaltyRepository) {
 
 		this.operations = operations;
-		this.repository = repository;
+		this.amsDataRepository = amsDataRepository;
+		this.adTableRepository = adTableRepository;
+		this.ebookRoyaltyRepository = ebookRoyaltyRepository;
 	}
 
 	Mono<Void> importMagicSpreadsheet(FilePart excelWorkbook) {
@@ -73,7 +80,7 @@ class LoaderService {
 		// TODO Delete file afterward
 	}
 
-	Mono<Void> importAmsReport(FilePart csvFilePart, java.util.Date date) {
+	Mono<Void> importAmsReport(FilePart csvFilePart, LocalDate date) {
 
 		return uploadFile(csvFilePart, UPLOAD_ROOT)
 			.then(toReader(csvFilePart.filename(), UPLOAD_ROOT))
@@ -169,7 +176,7 @@ class LoaderService {
 					return new EbookRoyaltyDataObject(
 						null,
 						row.getRowNum(),
-						Date.valueOf(EbookRoyaltyDataColumn.RoyaltyDate.stringValue(row)),
+						LocalDate.parse(EbookRoyaltyDataColumn.RoyaltyDate.stringValue(row)),
 						EbookRoyaltyDataColumn.Title.stringValue(row),
 						EbookRoyaltyDataColumn.AuthorName.stringValue(row),
 						EbookRoyaltyDataColumn.ASIN.stringValue(row),
@@ -179,7 +186,7 @@ class LoaderService {
 						EbookRoyaltyDataColumn.NetUnitsSold.cellType(row) == Cell.CELL_TYPE_NUMERIC ? EbookRoyaltyDataColumn.NetUnitsSold.numericValue(row) : Double.parseDouble(EbookRoyaltyDataColumn.NetUnitsSold.stringValue(row)),
 						EbookRoyaltyDataColumn.Royalty.cellType(row) == Cell.CELL_TYPE_NUMERIC ? EbookRoyaltyDataColumn.Royalty.numericValue(row) : Double.parseDouble(EbookRoyaltyDataColumn.Royalty.stringValue(row)),
 						EbookRoyaltyDataColumn.Currency.stringValue(row));
-				} catch (IllegalStateException|IllegalArgumentException e) {
+				} catch (IllegalStateException|IllegalArgumentException|DateTimeParseException e) {
 					log.error("Failed to parse " + EBOOK_ROYALTY_DATA.name() + ": rowNum=" + row.getRowNum());
 					return null;
 				}
@@ -229,13 +236,13 @@ class LoaderService {
 					return new KenpReadDataObject(
 						null,
 						row.getRowNum(),
-						Date.valueOf(KenpReadDataColumn.OrderDate.stringValue(row)),
+						LocalDate.parse(KenpReadDataColumn.OrderDate.stringValue(row)),
 						KenpReadDataColumn.Title.stringValue(row),
 						KenpReadDataColumn.AuthorName.stringValue(row),
 						KenpReadDataColumn.ASIN.stringValue(row),
 						KenpReadDataColumn.Marketplace.stringValue(row),
 						KenpReadDataColumn.PagesRead.numericValue(row));
-				} catch (IllegalStateException|IllegalArgumentException e) {
+				} catch (IllegalStateException|IllegalArgumentException|DateTimeParseException e) {
 					log.error("Failed to parse " + KENP_READ_DATA.name() + ": rowNum=" + row.getRowNum());
 					return null;
 				}
@@ -246,7 +253,7 @@ class LoaderService {
 		return Mono.empty();
 	}
 
-	Mono<Void> loadAmsReport(Reader reader, java.util.Date date) {
+	Mono<Void> loadAmsReport(Reader reader, LocalDate date) {
 
 		try {
 			CSVParser parser = new CSVParser(reader, CSVFormat.DEFAULT
@@ -266,7 +273,7 @@ class LoaderService {
 							csvRecord.get("\uFEFFStatus"),
 							csvRecord.get("Campaign Name"),
 							csvRecord.get("Type"),
-							DATE_FORMAT.parse(csvRecord.get("Start Date")),
+							LocalDate.parse(csvRecord.get("Start Date"), DATE_FORMAT2),
 							toOptionalDate(csvRecord.get("End Date")),
 							toDouble(csvRecord.get("Budget")),
 							toDouble(csvRecord.get("Spend")),
@@ -274,21 +281,22 @@ class LoaderService {
 							toOptionalDouble(csvRecord.get("Clicks")),
 							toOptionalDouble(csvRecord.get("Average CPC")),
 							date));
-					} catch (ParseException e) {
+					} catch (DateTimeParseException e) {
 						log.error("Unable to parse #" + csvRecord.getRecordNumber() + " " + csvRecord.toString() + " => " + e.getMessage());
 						return Mono.empty();
 					}
 				})
 				.log("importAms-zipWithLatestAmsRecord")
+//				.filterWhen(amsDataObject -> adTableRepository.existsByCampaignName(amsDataObject.getCampaignName()))
 				.flatMap(amsDataObject -> Mono.zip(
 					totalImpressions(amsDataObject.getCampaignName()),
 					totalClicks(amsDataObject.getCampaignName()),
 					Mono.just(amsDataObject)))
 				.log("importAms-create-newAmsRecord")
 				.map(tuple3 -> {
-					log.info("Total impressions so far => " + tuple3.getT1());
-					log.info("Total clicks so far => " + tuple3.getT2());
-					log.info("New record => " + tuple3.getT3().toString());
+					log.info("Total impressions for " + tuple3.getT3().getCampaignName() + " so far => " + tuple3.getT1());
+					log.info("Total clicks for " + tuple3.getT3().getCampaignName() + " so far => " + tuple3.getT2());
+					log.info("New for " + tuple3.getT3().getCampaignName() + " => " + tuple3.getT3().toString());
 					return new AmsDataObject(
 						null,
 						-1,
@@ -305,12 +313,8 @@ class LoaderService {
 						date);
 				})
 				.log("importAms-logitall")
-				.map(amsDataObject -> {
-					log.info("Diff'd AMS Data => " + amsDataObject.toString());
-					return amsDataObject;
-				})
 				.log("importAms-saveToMongoDB")
-				.flatMap(repository::save)
+				.flatMap(amsDataRepository::save)
 				.log("importAms-closeParser")
 				.then(Mono.fromRunnable(() -> {
 					try {
@@ -325,13 +329,13 @@ class LoaderService {
 
 	private Mono<Double> totalImpressions(String campaignName) {
 
-		return repository.findByCampaignName(campaignName)
+		return amsDataRepository.findByCampaignName(campaignName)
 			.reduce(0.0, (total, amsDataObject) -> total + amsDataObject.getImpressions().orElse(0.0));
 	}
 
 	private Mono<Double> totalClicks(String campaignName) {
 
-		return repository.findByCampaignName(campaignName)
+		return amsDataRepository.findByCampaignName(campaignName)
 			.reduce(0.0, (total, amsDataObject) -> total + amsDataObject.getClicks().orElse(0.0));
 	}
 
@@ -358,11 +362,11 @@ class LoaderService {
 		}
 	}
 
-	private static Optional<java.util.Date> toOptionalDate(String value) {
+	private static Optional<LocalDate> toOptionalDate(String value) {
 
 		try {
-			return Optional.of(DATE_FORMAT.parse(value));
-		} catch (ParseException e) {
+			return Optional.of(LocalDate.parse(value, DATE_FORMAT2));
+		} catch (DateTimeParseException e) {
 			return Optional.empty();
 		}
 	}

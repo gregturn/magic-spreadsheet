@@ -18,7 +18,7 @@ package com.greglturnquist.magicspreadsheet;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.Optional;
 
 import org.springframework.data.annotation.Id;
@@ -37,12 +37,12 @@ class AmsDataObject {
 	String status;
 	String campaignName;
 	String type;
-	Date startDate;
-	Optional<Date> endDate;
+	LocalDate startDate;
+	Optional<LocalDate> endDate;
 	double budget;
 	double spend;
 	Optional<Double> impressions;
 	Optional<Double> clicks;
 	Optional<Double> averageCpc;
-	Date date;
+	LocalDate date;
 }

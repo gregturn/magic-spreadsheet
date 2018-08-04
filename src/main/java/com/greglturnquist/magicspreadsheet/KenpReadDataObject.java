@@ -18,7 +18,7 @@ package com.greglturnquist.magicspreadsheet;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
-import java.util.Date;
+import java.time.LocalDate;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -33,7 +33,7 @@ class KenpReadDataObject {
 
 	@Id String id;
 	int rowNum;
-	Date orderDate;
+	LocalDate orderDate;
 	String title;
 	String author;
 	String ASIN;

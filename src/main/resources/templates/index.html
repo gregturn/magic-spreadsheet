@@ -11,7 +11,8 @@
 
     <ul>
         <li><a th:href="@{/ads}">Ads</a></li>
-        <li><a th:href="@{/rawdata}">Raw Data</a></li>
+        <li><a th:href="@{/rawRoyaltyData}">Raw Royalty Data</a></li>
+        <li><a th:href="@{/rawAmsData}">Raw AMS Ad Data</a></li>
         <li><a th:href="@{/conversions}">Conversion Data</a></li>
     </ul>
 
@@ -26,7 +27,7 @@
     <p>
         Import new AMS report
         <form method="post" enctype="multipart/form-data" action="/import-ams">
-            <p><input type="file" name="csvFile" /></p>
+            <p><input type="file" name="csvFile" multiple="multiple" /></p>
             <p><input type="date" name="date" /></p>
             <p><input type="submit" value="Upload" /></p>
         </form>

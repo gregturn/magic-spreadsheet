@@ -17,7 +17,7 @@ package com.greglturnquist.magicspreadsheet;
 
 import lombok.RequiredArgsConstructor;
 
-import java.util.Date;
+import java.time.LocalDate;
 
 /**
  * @author Greg Turnquist
@@ -63,7 +63,7 @@ public class AmsDataDTO {
 			.orElse("");
 	}
 
-	public Date getDate() {
+	public LocalDate getDate() {
 		return this.object.getDate();
 	}
 }

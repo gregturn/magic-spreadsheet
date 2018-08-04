@@ -15,32 +15,20 @@
  */
 package com.greglturnquist.magicspreadsheet;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+import org.apache.poi.ss.usermodel.Row;
 
 /**
  * @author Greg Turnquist
  */
-@Data
-@AllArgsConstructor
-@Document
-class EbookRoyaltyDataObject {
+class Utils {
 
-	@Id String id;
-	int rowNum;
-	LocalDate royaltyDate;
-	String title;
-	String authorName;
-	String ASIN;
-	String marketplace;
-	String royaltyType;
-	String transactionType;
-	double netUnitsSold;
-	double royalty;
-	String currency;
+	static LocalDate dateValue(int index, Row row) {
+		return row.getCell(index).getDateCellValue().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+	}
 }

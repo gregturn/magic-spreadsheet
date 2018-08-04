@@ -24,6 +24,7 @@
 		<java.version>1.8</java.version>
 		<apache-poi.version>3.10.1</apache-poi.version>
 		<commons-csv.version>1.5</commons-csv.version>
+		<spring-data-releasetrain.version>Kay-BUILD-SNAPSHOT</spring-data-releasetrain.version>
 	</properties>
 
 	<dependencies>
@@ -62,6 +63,11 @@
 		</dependency>
 
 		<dependency>
+			<groupId>io.projectreactor.addons</groupId>
+			<artifactId>reactor-extra</artifactId>
+		</dependency>
+
+		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-devtools</artifactId>
 			<scope>runtime</scope>
@@ -92,5 +98,42 @@
 		</plugins>
 	</build>
 
+	<repositories>
+		<repository>
+			<id>spring-snapshots</id>
+			<name>Spring Snapshots</name>
+			<url>https://repo.spring.io/snapshot</url>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</repository>
+		<repository>
+			<id>spring-milestones</id>
+			<name>Spring Milestones</name>
+			<url>https://repo.spring.io/milestone</url>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+	</repositories>
 
+	<pluginRepositories>
+		<pluginRepository>
+			<id>spring-snapshots</id>
+			<name>Spring Snapshots</name>
+			<url>https://repo.spring.io/snapshot</url>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</pluginRepository>
+		<pluginRepository>
+			<id>spring-milestones</id>
+			<name>Spring Milestones</name>
+			<url>https://repo.spring.io/milestone</url>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</pluginRepository>
+	</pluginRepositories>
+	
 </project>

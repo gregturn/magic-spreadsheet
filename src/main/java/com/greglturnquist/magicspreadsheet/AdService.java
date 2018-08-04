@@ -17,7 +17,7 @@ package com.greglturnquist.magicspreadsheet;
 
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.Optional;
 
 import reactor.core.publisher.Flux;
@@ -31,7 +31,7 @@ import org.springframework.stereotype.Service;
 @Slf4j
 class AdService {
 
-	private static final double KU_RATE = 0.0046;
+	static final double KU_RATE = 0.0046;
 
 	private final AmsDataRepository amsDataRepository;
 	private final AdTableRepository adTableRepository;
@@ -53,13 +53,13 @@ class AdService {
 		this.kenpReadRepository = kenpReadRepository;
 	}
 
-	Flux<BookDTO> clicksToConvert(Optional<Date> date) {
+	Flux<BookDTO> clicksToConvert(Optional<LocalDate> date) {
 
 		return bookRepository.findAll()
 			.flatMap(book -> clicksToConvert(book, date));
 	}
 
-	Mono<BookDTO> clicksToConvert(Book book, Optional<Date> date) {
+	Mono<BookDTO> clicksToConvert(Book book, Optional<LocalDate> date) {
 
 		return Mono.zip(
 			adPerformance(book.getTitle(), date),
@@ -72,19 +72,19 @@ class AdService {
 			.filter(bookDTO -> bookDTO.getAdPerformanceStats().getImpressions() > 0.0);
 	}
 
-	private Mono<Double> unitsSold(String bookTitle, Optional<Date> date) {
+	private Mono<Double> unitsSold(String bookTitle, Optional<LocalDate> date) {
 		
 		return ebookRoyaltyRepository.findByTitle(bookTitle)
 			.reduce(0.0, (counter, ebookRoyaltyData) -> counter + ebookRoyaltyData.getNetUnitsSold());
 	}
 
-	private Mono<Double> totalPagesRead(String bookTitle, Optional<Date> date) {
+	private Mono<Double> totalPagesRead(String bookTitle, Optional<LocalDate> date) {
 
 		return kenpReadRepository.findByTitle(bookTitle)
 			.reduce(0.0, (counter, kenpReadData) -> counter + kenpReadData.getPagesRead());
 	}
 
-	private Mono<Double> totalClicks(String bookTitle, Optional<Date> date) {
+	private Mono<Double> totalClicks(String bookTitle, Optional<LocalDate> date) {
 
 		return adTableRepository.findByBookTitle(bookTitle)
 			.flatMap(adTableObject -> date
@@ -95,7 +95,7 @@ class AdService {
 				.orElse(counter));
 	}
 
-	private Mono<Double> totalImpressions(String bookTitle, Optional<Date> date) {
+	private Mono<Double> totalImpressions(String bookTitle, Optional<LocalDate> date) {
 
 		return adTableRepository.findByBookTitle(bookTitle)
 			.flatMap(adTableObject -> date
@@ -106,7 +106,7 @@ class AdService {
 				.orElse(counter));
 	}
 
-	private Mono<AdPerformanceStats> adPerformance(String bookTitle, Optional<Date> date) {
+	private Mono<AdPerformanceStats> adPerformance(String bookTitle, Optional<LocalDate> date) {
 
 		return adTableRepository.findByBookTitle(bookTitle)
 			.flatMap(adTableObject -> date
@@ -122,7 +122,7 @@ class AdService {
 						.orElse(adPerformanceStats.getClicks())));
 	}
 
-	private Mono<Double> totalAdSpend(String bookTitle, Optional<Date> date) {
+	private Mono<Double> totalAdSpend(String bookTitle, Optional<LocalDate> date) {
 
 		return adTableRepository.findByBookTitle(bookTitle)
 			.flatMap(adTableObject -> date
@@ -133,7 +133,7 @@ class AdService {
 				.orElse(0.0));
 	}
 
-	private Mono<Double> totalEarnings(String bookTitle, Optional<Date> date) {
+	private Mono<Double> totalEarnings(String bookTitle, Optional<LocalDate> date) {
 
 		Mono<Double> totalRoyalties = date
 			.map(date1 -> ebookRoyaltyRepository.findByTitleAndRoyaltyDateAfter(bookTitle, date1))

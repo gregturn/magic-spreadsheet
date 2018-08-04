@@ -15,9 +15,10 @@
  */
 package com.greglturnquist.magicspreadsheet;
 
-import java.util.Date;
+import java.time.LocalDate;
 
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
 
 /**
@@ -27,5 +28,9 @@ interface KenpReadRepository extends ReactiveMongoRepository<KenpReadDataObject,
 
 	Flux<KenpReadDataObject> findByTitle(String title);
 
-	Flux<KenpReadDataObject> findByTitleAndOrderDateAfter(String title, Date date);
+	Mono<KenpReadDataObject> findByTitleAndOrderDate(String title, LocalDate date);
+
+	Flux<KenpReadDataObject> findByTitleAndOrderDateAfter(String title, LocalDate date);
+
+	Flux<KenpReadDataObject> findByTitleAndOrderDateBetween(String title, LocalDate earlier, LocalDate later);
 }

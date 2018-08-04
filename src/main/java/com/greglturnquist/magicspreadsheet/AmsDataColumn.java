@@ -17,6 +17,8 @@ package com.greglturnquist.magicspreadsheet;
 
 import lombok.extern.slf4j.Slf4j;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Optional;
 
 import org.apache.poi.ss.usermodel.Cell;
@@ -69,11 +71,11 @@ enum AmsDataColumn {
 		return row.getCell(this.index).getStringCellValue();
 	}
 
-	public java.util.Date dateValue(Row row) {
-		return row.getCell(this.index).getDateCellValue();
+	public LocalDate dateValue(Row row) {
+		return row.getCell(this.index).getDateCellValue().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
 	}
 
-	public Optional<java.util.Date> optionalDateValue(Row row) {
+	public Optional<LocalDate> optionalDateValue(Row row) {
 		return this.cellType(row) == Cell.CELL_TYPE_NUMERIC ? Optional.of(this.dateValue(row)) : Optional.empty();
 	}
 
