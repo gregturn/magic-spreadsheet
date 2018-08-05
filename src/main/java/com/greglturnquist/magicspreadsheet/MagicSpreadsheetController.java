@@ -290,7 +290,45 @@ public class MagicSpreadsheetController {
 			.flatMap(edges -> earningsService.totalCombinedRevenue(title, edges.getT1(), edges.getT2()))
 			.sort(Comparator.comparing(EarningsService.TotalSales::getDate)));
 
+		model.addAttribute("impressions", Flux.range(0, window)
+			.map(daysAgo -> LocalDate.now().minusDays(daysAgo))
+			.flatMap(date -> Mono.just(date).zipWith(adService.impressions(title, date)))
+			.sort(Comparator.comparing(Tuple2::getT1)));
+
+		model.addAttribute("clicks", Flux.range(0, window)
+			.map(daysAgo -> LocalDate.now().minusDays(daysAgo))
+			.flatMap(date -> Mono.just(date).zipWith(adService.clicks(title, date)))
+			.sort(Comparator.comparing(Tuple2::getT1)));
+
+		model.addAttribute("spend", Flux.range(0, window)
+			.map(daysAgo -> LocalDate.now().minusDays(daysAgo))
+			.flatMap(date -> Mono.just(date).zipWith(adService.spend(title, date)))
+			.sort(Comparator.comparing(Tuple2::getT1)));
+
+		model.addAttribute("adCount", Flux.range(0, window)
+			.map(daysAgo -> LocalDate.now().minusDays(daysAgo))
+			.flatMap(date -> Mono.just(date).zipWith(adService.adCount(title, date)))
+			.sort(Comparator.comparing(Tuple2::getT1)));
+
+		model.addAttribute("totalAdSpend", Flux.range(0, window)
+			.map(daysAgo -> Tuples.of(LocalDate.now().minusDays(window), LocalDate.now().minusDays(daysAgo)))
+			.flatMap(edges -> adService.totalAdSpend(title, edges.getT1(), edges.getT2()))
+			.sort(Comparator.comparing(EarningsService.TotalSales::getDate)));
+
+		model.addAttribute("roi", Flux.range(0, window)
+			.map(daysAgo -> Tuples.of(LocalDate.now().minusDays(window), LocalDate.now().minusDays(daysAgo)))
+			.flatMap(edges -> roi(title, edges.getT1(), edges.getT2()))
+			.sort(Comparator.comparing(EarningsService.TotalSales::getDate)));
+
 		return Mono.just("individualReport");
+	}
+
+	private Mono<EarningsService.TotalSales> roi(String title, LocalDate beginning, LocalDate end) {
+		return earningsService.totalCombinedRevenue(title, beginning, end)
+			.map(EarningsService.TotalSales::getTotal)
+			.flatMap(revenue -> adService.totalAdSpend(title, beginning, end)
+				.map(EarningsService.TotalSales::getTotal)
+				.map(adSpend -> new EarningsService.TotalSales(end, 100.0 * (revenue - adSpend) / adSpend)));
 	}
 
 	@GetMapping("/conversionsRaw")

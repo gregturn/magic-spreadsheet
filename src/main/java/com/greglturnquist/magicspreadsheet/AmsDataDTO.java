@@ -57,10 +57,8 @@ public class AmsDataDTO {
 			.orElse("");
 	}
 
-	public String getSpend() {
-		return this.object.getAverageCpc()
-			.map(averageCpc -> "$" + averageCpc * this.object.getClicks().orElse(0.0))
-			.orElse("");
+	public String getTotalSpend() {
+		return "$" + this.object.getTotalSpend();
 	}
 
 	public LocalDate getDate() {

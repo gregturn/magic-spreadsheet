@@ -306,7 +306,7 @@ class LoaderService {
 						tuple3.getT3().getStartDate(),
 						tuple3.getT3().getEndDate(),
 						tuple3.getT3().getBudget(),
-						tuple3.getT3().getSpend(),
+						tuple3.getT3().getTotalSpend(),
 						Optional.of(tuple3.getT3().getImpressions().orElse(0.0) - tuple3.getT1()),
 						Optional.of(tuple3.getT3().getClicks().orElse(0.0) - tuple3.getT2()),
 						tuple3.getT3().getAverageCpc(),

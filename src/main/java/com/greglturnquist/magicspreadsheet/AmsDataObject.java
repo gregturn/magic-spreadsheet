@@ -40,7 +40,7 @@ class AmsDataObject {
 	LocalDate startDate;
 	Optional<LocalDate> endDate;
 	double budget;
-	double spend;
+	double totalSpend;
 	Optional<Double> impressions;
 	Optional<Double> clicks;
 	Optional<Double> averageCpc;

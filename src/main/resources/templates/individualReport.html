@@ -81,21 +81,27 @@
                 </tr>
                 <tr class="ad-stats">
                     <td>Impressions</td>
+                    <td th:each="value : ${impressions}" th:text="${value.T2}" th:for="${value.T1}"></td>
                 </tr>
                 <tr class="ad-stats">
                     <td>Clicks</td>
+                    <td th:each="value : ${clicks}" th:text="${value.T2}" th:for="${value.T1}"></td>
                 </tr>
                 <tr class="ad-stats">
                     <td>Spend</td>
+                    <td th:each="value : ${spend}" th:text="${value.T2}" th:for="${value.T1}"></td>
                 </tr>
                 <tr class="ad-stats">
                     <td>Ad Count (Only impressions > 1000)</td>
+                    <td th:each="value : ${adCount}" th:text="${value.T2}" th:for="${value.T1}"></td>
                 </tr>
                 <tr class="roi">
                     <td th:text="${'Running ' + window + '-Day Spend'}" />
+                    <td th:each="value : ${totalAdSpend}" th:text="${value.total}" th:for="${value.date}"></td>
                 </tr>
                 <tr class="roi">
                     <td>Running ROI</td>
+                    <td th:each="value : ${roi}" th:text="'' + ${value.total} + '%'" th:for="${value.date}"></td>
                 </tr>
             </tbody>
         </table>

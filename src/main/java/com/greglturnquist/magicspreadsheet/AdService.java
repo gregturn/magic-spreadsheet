@@ -122,15 +122,23 @@ class AdService {
 						.orElse(adPerformanceStats.getClicks())));
 	}
 
-	private Mono<Double> totalAdSpend(String bookTitle, Optional<LocalDate> date) {
+	Mono<Double> totalAdSpend(String bookTitle, Optional<LocalDate> date) {
 
 		return adTableRepository.findByBookTitle(bookTitle)
 			.flatMap(adTableObject -> date
 				.map(earliestDate -> amsDataRepository.findByCampaignNameAndDateAfter(adTableObject.getCampaignName(), earliestDate))
 				.orElse(amsDataRepository.findByCampaignName(adTableObject.getCampaignName())))
-			.reduce(0.0, (totalAdSpend, amsDataObject) -> totalAdSpend + amsDataObject.getAverageCpc()
-				.map(averageCpc -> averageCpc * amsDataObject.getClicks().orElse(0.0))
-				.orElse(0.0));
+			.reduce(0.0, (totalAdSpend, amsDataObject) -> totalAdSpend +
+				amsDataObject.getClicks().orElse(0.0) * amsDataObject.getAverageCpc().orElse(0.0));
+	}
+
+	Mono<EarningsService.TotalSales> totalAdSpend(String title, LocalDate beginning, LocalDate end) {
+
+		return adTableRepository.findByBookTitle(title)
+			.flatMap(adTableObject -> amsDataRepository.findByCampaignNameAndDateBetween(adTableObject.getCampaignName(), beginning, end))
+			.reduce(0.0, (totalAdSpend, amsDataObject) -> totalAdSpend +
+				amsDataObject.getClicks().orElse(0.0) * amsDataObject.getAverageCpc().orElse(0.0))
+			.map(totalAdSpend -> new EarningsService.TotalSales(end, totalAdSpend));
 	}
 
 	private Mono<Double> totalEarnings(String bookTitle, Optional<LocalDate> date) {
@@ -149,5 +157,35 @@ class AdService {
 			log.info(bookTitle + ": Totaling up $" + royalties + " along with " + pagesRead + " pages read");
 			return royalties + pagesRead * KU_RATE;
 		});
+	}
+
+	Mono<Double> impressions(String title, LocalDate date) {
+
+		return adTableRepository.findByBookTitle(title)
+			.flatMap(adTableObject -> amsDataRepository.findByCampaignNameAndDate(adTableObject.getCampaignName(), date))
+			.reduce(0.0, (total, amsDataObject) -> total + amsDataObject.getImpressions().orElse(0.0));
+	}
+
+	Mono<Double> clicks(String title, LocalDate date) {
+
+		return adTableRepository.findByBookTitle(title)
+			.flatMap(adTableObject -> amsDataRepository.findByCampaignNameAndDate(adTableObject.getCampaignName(), date))
+			.reduce(0.0, (total, amsDataObject) -> total + amsDataObject.getClicks().orElse(0.0));
+	}
+
+	Mono<Double> spend(String title, LocalDate date) {
+
+		return adTableRepository.findByBookTitle(title)
+			.flatMap(adTableObject -> amsDataRepository.findByCampaignNameAndDate(adTableObject.getCampaignName(), date))
+			.reduce(0.0, (total, amsDataObject) -> total +
+				amsDataObject.getAverageCpc().orElse(0.0) * amsDataObject.getClicks().orElse(0.0));
+	}
+
+	Mono<Long> adCount(String title, LocalDate date) {
+
+		return adTableRepository.findByBookTitle(title)
+			.flatMap(adTableObject -> amsDataRepository.findByCampaignNameAndDate(adTableObject.getCampaignName(), date))
+			.filter(amsDataObject -> amsDataObject.getImpressions().orElse(0.0) >= 1000.0)
+			.count();
 	}
 }
