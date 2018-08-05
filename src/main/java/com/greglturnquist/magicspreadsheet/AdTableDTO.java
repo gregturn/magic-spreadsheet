@@ -27,6 +27,10 @@ class AdTableDTO {
 
 	private final AdTableObject object;
 
+	public String getId() {
+		return this.object.getId();
+	}
+	
 	public int getRowNum() {
 		return this.object.getRowNum();
 	}

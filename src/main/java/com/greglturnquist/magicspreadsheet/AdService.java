@@ -22,6 +22,7 @@ import java.util.Optional;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import org.springframework.data.mongodb.core.ReactiveMongoOperations;
 import org.springframework.stereotype.Service;
 
 /**
@@ -39,18 +40,22 @@ class AdService {
 	private final BookRepository bookRepository;
 	private final KenpReadRepository kenpReadRepository;
 
+	private final ReactiveMongoOperations operations;
+
 
 	AdService(AmsDataRepository amsDataRepository,
 			  AdTableRepository adTableRepository,
 			  EbookRoyaltyRepository ebookRoyaltyRepository,
 			  BookRepository bookRepository,
-			  KenpReadRepository kenpReadRepository) {
+			  KenpReadRepository kenpReadRepository,
+			  ReactiveMongoOperations operations) {
 
 		this.amsDataRepository = amsDataRepository;
 		this.adTableRepository = adTableRepository;
 		this.ebookRoyaltyRepository = ebookRoyaltyRepository;
 		this.bookRepository = bookRepository;
 		this.kenpReadRepository = kenpReadRepository;
+		this.operations = operations;
 	}
 
 	Flux<BookDTO> clicksToConvert(Optional<LocalDate> date) {
@@ -187,5 +192,24 @@ class AdService {
 			.flatMap(adTableObject -> amsDataRepository.findByCampaignNameAndDate(adTableObject.getCampaignName(), date))
 			.filter(amsDataObject -> amsDataObject.getImpressions().orElse(0.0) >= 1000.0)
 			.count();
+	}
+
+	Flux<AmsDataObject> unlinkedAmsData() {
+
+		return adTableRepository.findAll()
+			.map(AdTableObject::getCampaignName)
+			.collectList()
+			.flatMapMany(campaigns -> amsDataRepository.findAll()
+				.filter(amsDataObject -> !campaigns.contains(amsDataObject.getCampaignName())))
+			.distinct(AmsDataObject::getCampaignName);
+	}
+
+	Flux<AdTableObject> unlinkedAds() {
+
+		return bookRepository.findAll()
+			.map(Book::getTitle)
+			.collectList()
+			.flatMapMany(titles -> adTableRepository.findAll()
+				.filter(adTableObject -> !titles.contains(adTableObject.getBookTitle())));
 	}
 }

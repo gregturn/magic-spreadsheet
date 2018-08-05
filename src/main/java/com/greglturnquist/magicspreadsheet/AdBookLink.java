@@ -15,13 +15,17 @@
  */
 package com.greglturnquist.magicspreadsheet;
 
-import reactor.core.publisher.Mono;
-import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
+import lombok.Data;
+
+import java.util.List;
 
 /**
  * @author Greg Turnquist
  */
-interface BookRepository extends ReactiveMongoRepository<Book, String> {
+@Data
+class AdBookLink {
 
-	Mono<Book> findByTitle(String title);
+	List<String> adIds;
+	String bookTitle;
+
 }

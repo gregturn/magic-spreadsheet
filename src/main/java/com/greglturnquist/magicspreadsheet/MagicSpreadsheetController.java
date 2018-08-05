@@ -35,6 +35,7 @@ import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -57,12 +58,14 @@ public class MagicSpreadsheetController {
 	private final LoaderService loaderService;
 	private final EarningsService earningsService;
 	private final EbookRoyaltyRepository ebookRoyaltyRepository;
+	private final BookRepository bookRepository;
 
 	public MagicSpreadsheetController(AmsDataRepository amsDataRepository,
 									  AdTableRepository adTableRepository,
 									  AdService adService, LoaderService loaderService,
 									  EarningsService earningsService,
-									  EbookRoyaltyRepository ebookRoyaltyRepository) {
+									  EbookRoyaltyRepository ebookRoyaltyRepository,
+									  BookRepository bookRepository) {
 
 		this.amsDataRepository = amsDataRepository;
 		this.adTableRepository = adTableRepository;
@@ -70,6 +73,7 @@ public class MagicSpreadsheetController {
 		this.loaderService = loaderService;
 		this.earningsService = earningsService;
 		this.ebookRoyaltyRepository = ebookRoyaltyRepository;
+		this.bookRepository = bookRepository;
 	}
 
 	@GetMapping("/")
@@ -339,6 +343,59 @@ public class MagicSpreadsheetController {
 			.sort(Comparator.comparing(BookDTO::getTitle));
 	}
 
+	@GetMapping("/books")
+	Mono<String> allBooks(Model model) {
+
+		model.addAttribute("books", bookRepository.findAll());
+
+		return Mono.just("books");
+	}
+
+	@GetMapping("/unlinkedAds")
+	Mono<String> unlinkedAds(Model model) {
+
+		model.addAttribute("adLinkForm", new AdBookLink());
+
+		model.addAttribute("books", bookRepository.findAll()
+			.map(book -> Tuples.of(book.getTitle(), book.getSeries())));
+
+		model.addAttribute("adTable", adService.unlinkedAds()
+			.map(AdTableDTO::new));
+
+		model.addAttribute("amsData", adService.unlinkedAmsData()
+			.map(AmsDataDTO::new));
+
+		return Mono.just("unlinkedAds");
+	}
+
+	@GetMapping("createAllAds")
+	Mono<String> createAllAds() {
+
+		return adService.unlinkedAmsData()
+			.map(Utils::amsDataToAdData)
+			.flatMap(adTableRepository::save)
+			.then(Mono.just("redirect:/unlinkedAds"));
+	}
+
+	@GetMapping("/createAd")
+	Mono<String> createAd(@RequestParam("id") String id) {
+
+		return amsDataRepository.findById(id)
+			.map(Utils::amsDataToAdData)
+			.flatMap(adTableRepository::save)
+			.then(Mono.just("redirect:/unlinkedAds"));
+	}
+
+	@PostMapping("/createBooks")
+	Mono<String> createBooks(@ModelAttribute AdBookLink adLinkingParams) {
+
+		return bookRepository.findByTitle(adLinkingParams.getBookTitle())
+			.flatMapMany(book -> Flux.fromIterable(adLinkingParams.getAdIds())
+				.flatMap(id -> adTableRepository.findById(id).zipWith(Mono.just(book))))
+			.flatMap(objects -> adTableRepository.save(updateAd(objects.getT1(), objects.getT2())))
+			.then(Mono.just("redirect:/unlinkedAds"));
+	}
+
 	@PostMapping("/upload")
 	Mono<String> upload(@RequestPart(name = "spreadsheet") Flux<FilePart> spreadsheet) {
 
@@ -385,5 +442,13 @@ public class MagicSpreadsheetController {
 		}
 
 		return Optional.empty();
+	}
+
+	private AdTableObject updateAd(AdTableObject ad, Book book) {
+
+		ad.setBookTitle(book.getTitle());
+		ad.setSeries(book.getSeries());
+
+		return ad;
 	}
 }

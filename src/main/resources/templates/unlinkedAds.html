@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Magic Spreadsheet - Spring Boot style</title>
+    <link rel="stylesheet" href="/main.css" />
+</head>
+<body>
+
+    <h1>Magic Spreadsheet - Unlinked Ads</h1>
+
+    <div>
+        <ul>
+            <li><a th:href="@{/}">Home</a></li>
+        </ul>
+    </div>
+
+    <div>
+        <form th:action="@{/createBooks}" th:object="${adLinkForm}" method="post">
+        <p>Ads not linked to a book</p>
+        <table>
+            <thead>
+            <tr>
+                <th>
+                    <input type="checkbox" id="check-all" />
+                    <script th:inline="javascript">
+						/*<![CDATA[*/
+
+                        function clickAllCheckboxes(state) {
+							var checkboxes = document.querySelectorAll("input[id=ads]");
+
+							for (var i = 0; i < checkboxes.length; i++) {
+								checkboxes[i].checked = state;
+							}
+						}
+
+						var checkbox = document.querySelector("input[id=check-all]");
+
+                        checkbox.addEventListener('change', function() {
+                        	if (this.checked) {
+                        		// currently checked
+								clickAllCheckboxes(true);
+							} else {
+                        		// current NOT checked
+								clickAllCheckboxes(false);
+                            }
+                        });
+                        
+						/*]]>*/
+                    </script>
+                </th><th>Campaign</th><th>Type</th><th>Start</th><th>End</th><th>Budget</th><th>Book Title</th><th>Series</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="data : ${adTable}">
+                <td><input type="checkbox" id="ads" th:field="*{adIds}" th:value="${data.id}" /></td>
+                <td th:text="${data.campaignName}" />
+                <td th:text="${data.type}" />
+                <td th:text="${data.start}" />
+                <td th:text="${data.end}" />
+                <td th:text="${data.budget}" />
+                <td></td>
+                <td></td>
+            </tr>
+            </tbody>
+        </table>
+        <p>
+            Link to...
+
+            <p th:each="book : ${books}">
+                <input type="radio" name="book" th:field="*{bookTitle}" th:id="${book.T1}" th:value="${book.T1}"/>
+                <label th:for="${book.T1}" th:text="${book.T1}"></label>
+            </p>
+
+            <input type="submit" />
+        </p>
+        </form>
+    </div>
+
+    <div>
+        <p>Raw AMS data not linked to any ads</p>
+        <table>
+            <thead>
+            <tr>
+                <th></th><th>Status</th><th>Campaign</th><th>Impressions</th><th>Clicks</th><th>Avg. CPC</th><th>Total Spent</th><th>Date</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td/>
+                <td/>
+                <td/>
+                <td/>
+                <td/>
+                <td/>
+                <td/>
+                <td/>
+                <td><a th:href="@{/createAllAds}">Convert to ads</a></td>
+            </tr>
+            <tr th:each="data : ${amsData}">
+                <td th:text="${data.rowNum}" />
+                <td th:text="${data.status}" />
+                <td th:text="${data.campaignName}" />
+                <td th:text="${data.impressions}" />
+                <td th:text="${data.clicks}" />
+                <td th:text="${data.averageCpc}" />
+                <td th:text="${data.totalSpend}" />
+                <td th:text="${data.date}" />
+                <td><a th:href="@{/createAd(id=${data.id})}">Create Ad</a></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+</body>
+</html>

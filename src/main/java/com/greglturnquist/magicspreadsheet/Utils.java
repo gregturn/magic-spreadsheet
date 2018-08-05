@@ -15,9 +15,6 @@
  */
 package com.greglturnquist.magicspreadsheet;
 
-import lombok.Data;
-import lombok.RequiredArgsConstructor;
-
 import java.time.LocalDate;
 import java.time.ZoneId;
 
@@ -30,5 +27,20 @@ class Utils {
 
 	static LocalDate dateValue(int index, Row row) {
 		return row.getCell(index).getDateCellValue().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+	}
+
+	static AdTableObject amsDataToAdData(AmsDataObject amsDataObject) {
+
+		return new AdTableObject(
+			null,
+			-1,
+			amsDataObject.getCampaignName(),
+			amsDataObject.getType(),
+			amsDataObject.getStartDate(),
+			amsDataObject.getEndDate(),
+			amsDataObject.getBudget(),
+			null,
+			null
+		);
 	}
 }

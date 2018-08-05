@@ -39,6 +39,10 @@ public class AmsDataDTO {
 		return this.object.getCampaignName();
 	}
 
+	public String getId() {
+		return this.object.getId();
+	}
+
 	public String getImpressions() {
 		return this.object.getImpressions()
 			.map(Object::toString)
