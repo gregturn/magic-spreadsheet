@@ -15,6 +15,7 @@
  */
 package com.greglturnquist.magicspreadsheet;
 
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 import java.time.LocalDate;
@@ -26,6 +27,11 @@ import java.time.LocalDate;
 class AdTableDTO {
 
 	private final AdTableObject object;
+	@Getter private final String bestGuess;
+
+	AdTableDTO(AdTableObject object) {
+		this(object, "");
+	}
 
 	public String getId() {
 		return this.object.getId();

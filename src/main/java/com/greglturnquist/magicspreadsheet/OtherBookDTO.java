@@ -15,22 +15,14 @@
  */
 package com.greglturnquist.magicspreadsheet;
 
-import lombok.Data;
-
-import java.util.List;
-
 /**
  * @author Greg Turnquist
  */
-@Data
-class AdBookLink {
+class OtherBookDTO {
 
-	List<String> adIds;
-	String bookTitle;
+	private final Book book;
 
-	String author;
-	String bookShort;
-	String series;
-	String ASIN;
-	double KENPC = 0.1;
+	OtherBookDTO(Book book) {
+		this.book = book;
+	}
 }

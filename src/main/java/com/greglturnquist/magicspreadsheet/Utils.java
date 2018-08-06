@@ -19,6 +19,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 
 import org.apache.poi.ss.usermodel.Row;
+import reactor.core.publisher.Mono;
 
 /**
  * @author Greg Turnquist
@@ -42,5 +43,16 @@ class Utils {
 			null,
 			null
 		);
+	}
+
+	/**
+	 * Invert a {@link Boolean} condition, that is wrapped by a {@link Mono}.
+	 * 
+	 * @param condition
+	 * @return
+	 */
+	static Mono<Boolean> not(Mono<Boolean> condition) {
+		return condition
+			.map(aBoolean -> !aBoolean);
 	}
 }

@@ -34,6 +34,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -41,6 +42,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.server.ServerWebExchange;
 
 /**
  * @author Greg Turnquist
@@ -351,6 +353,18 @@ public class MagicSpreadsheetController {
 		return Mono.just("books");
 	}
 
+	@DeleteMapping("/books")
+	Mono<String> deleteBook(ServerWebExchange exchange) {
+
+		return exchange.getFormData()
+			.map(stringStringMultiValueMap -> stringStringMultiValueMap.get("bookTitle"))
+			.flatMap(titleList -> Mono.just(titleList.stream().findFirst()))
+			.flatMap(title -> title
+				.map(bookRepository::deleteByTitle)
+				.orElse(Mono.empty()))
+			.then(Mono.just("redirect:/books"));
+	}
+
 	@GetMapping("/unlinkedAds")
 	Mono<String> unlinkedAds(Model model) {
 
@@ -360,7 +374,8 @@ public class MagicSpreadsheetController {
 			.map(book -> Tuples.of(book.getTitle(), book.getSeries())));
 
 		model.addAttribute("adTable", adService.unlinkedAds()
-			.map(AdTableDTO::new));
+			.flatMap(adTableObject -> bestGuess(adTableObject).zipWith(Mono.just(adTableObject)))
+			.map(objects -> new AdTableDTO(objects.getT2(), objects.getT1())));
 
 		model.addAttribute("amsData", adService.unlinkedAmsData()
 			.map(AmsDataDTO::new));
@@ -389,7 +404,29 @@ public class MagicSpreadsheetController {
 	@PostMapping("/createBooks")
 	Mono<String> createBooks(@ModelAttribute AdBookLink adLinkingParams) {
 
+		if (adLinkingParams.getBookTitle().contains("bestGuess")) {
+
+			return Flux.fromIterable(adLinkingParams.getAdIds())
+				.flatMap(id -> adTableRepository.findById(id)
+					.flatMapMany(ad -> bestGuess(ad)
+						.flatMapMany(bookTitle -> bookRepository.findByTitle(bookTitle).zipWith(Mono.just(ad)))))
+				.map(objects -> updateAd(objects.getT2(), objects.getT1()))
+				.flatMap(adTableRepository::save)
+				.then(Mono.just("redirect:/unlinkedAds"));
+		}
+
 		return bookRepository.findByTitle(adLinkingParams.getBookTitle())
+			.switchIfEmpty(bookRepository.save(new Book(
+				null,
+				-1,
+				-1,
+				adLinkingParams.getBookTitle(),
+				adLinkingParams.getAuthor(),
+				adLinkingParams.getBookShort(),
+				adLinkingParams.getSeries(),
+				adLinkingParams.getASIN(),
+				adLinkingParams.getKENPC()
+			)))
 			.flatMapMany(book -> Flux.fromIterable(adLinkingParams.getAdIds())
 				.flatMap(id -> adTableRepository.findById(id).zipWith(Mono.just(book))))
 			.flatMap(objects -> adTableRepository.save(updateAd(objects.getT1(), objects.getT2())))
@@ -450,5 +487,15 @@ public class MagicSpreadsheetController {
 		ad.setSeries(book.getSeries());
 
 		return ad;
+	}
+
+	private Mono<String> bestGuess(AdTableObject ad) {
+
+		return bookRepository.findAll()
+			.filter(book -> ad.getCampaignName().contains(book.getTitle()) || ad.getCampaignName().contains(book.getBookShort()))
+			.map(Book::getTitle)
+			.switchIfEmpty(Flux.just(""))
+			.next();
+
 	}
 }

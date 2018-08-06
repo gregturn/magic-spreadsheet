@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
@@ -270,7 +271,7 @@ class LoaderService {
 						return Mono.just(new AmsDataObject(
 							null,
 							toInt(csvRecord.getRecordNumber()),
-							csvRecord.get("\uFEFFStatus"),
+							csvRecord.get(0), // This column's header fluctuates.
 							csvRecord.get("Campaign Name"),
 							csvRecord.get("Type"),
 							LocalDate.parse(csvRecord.get("Start Date"), DATE_FORMAT2),
@@ -425,7 +426,7 @@ class LoaderService {
 
 		return Mono.defer(() -> {
 			try {
-				return Mono.just(Files.newBufferedReader(Paths.get(rootDir, filename)));
+				return Mono.just(Files.newBufferedReader(Paths.get(rootDir, filename), Charset.forName("ISO-8859-1")));
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}

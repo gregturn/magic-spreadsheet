@@ -4,6 +4,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.mongo.MongoClientSettingsBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
+import org.springframework.web.filter.reactive.HiddenHttpMethodFilter;
 
 import com.mongodb.connection.ConnectionPoolSettings;
 
@@ -19,5 +20,10 @@ public class MagicSpreadsheetApplication {
 		return clientSettingsBuilder -> clientSettingsBuilder.connectionPoolSettings(ConnectionPoolSettings.builder()
 			.maxWaitQueueSize(15000)
 			.build());
+	}
+
+	@Bean
+	HiddenHttpMethodFilter hiddenHttpMethodFilter() {
+		return new HiddenHttpMethodFilter();
 	}
 }

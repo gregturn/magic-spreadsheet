@@ -18,14 +18,17 @@
 <div>
     <table>
         <tbody>
-        <tr th:each="book : ${books}">
-            <td th:text="${book.title}" />
-            <td th:text="${book.author}" />
-            <td th:text="${book.bookShort}" />
-            <td th:text="${book.series}" />
-            <td th:text="${book.ASIN}" />
-            <td th:text="${book.KENPC}" />
-        </tr>
+        <form th:action="@{/books}" th:method="delete">
+            <tr th:each="book : ${books}">
+                <td th:text="${book.title}" />
+                <td th:text="${book.author}" />
+                <td th:text="${book.bookShort}" />
+                <td th:text="${book.series}" />
+                <td th:text="${book.ASIN}" />
+                <td th:text="${book.KENPC}" />
+                <td><button name="bookTitle" th:value="${book.title}">Delete</button></td>
+            </tr>
+        </form>
         </tbody>
     </table>
 </div>

@@ -24,4 +24,6 @@ import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
 interface BookRepository extends ReactiveMongoRepository<Book, String> {
 
 	Mono<Book> findByTitle(String title);
+
+	Mono<Book> deleteByTitle(String title);
 }
