@@ -34,6 +34,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -359,10 +360,21 @@ public class MagicSpreadsheetController {
 		return exchange.getFormData()
 			.map(stringStringMultiValueMap -> stringStringMultiValueMap.get("bookTitle"))
 			.flatMap(titleList -> Mono.just(titleList.stream().findFirst()))
-			.flatMap(title -> title
-				.map(bookRepository::deleteByTitle)
+			.flatMap(optionalTitle -> optionalTitle
+				.map(bookTitle -> bookRepository.deleteByTitle(bookTitle).zipWith(wipeOutBookReferencesInAds(bookTitle)))
 				.orElse(Mono.empty()))
 			.then(Mono.just("redirect:/books"));
+	}
+
+	private Mono<Void> wipeOutBookReferencesInAds(String title) {
+
+		return adTableRepository.findByBookTitle(title)
+			.flatMap(adTableObject -> {
+				adTableObject.setBookTitle("");
+				adTableObject.setSeries("");
+				return adTableRepository.save(adTableObject);
+			})
+			.then();
 	}
 
 	@GetMapping("/unlinkedAds")
@@ -492,10 +504,18 @@ public class MagicSpreadsheetController {
 	private Mono<String> bestGuess(AdTableObject ad) {
 
 		return bookRepository.findAll()
-			.filter(book -> ad.getCampaignName().contains(book.getTitle()) || ad.getCampaignName().contains(book.getBookShort()))
+			.filter(book -> referencesBook(ad, book))
 			.map(Book::getTitle)
 			.switchIfEmpty(Flux.just(""))
 			.next();
 
+	}
+
+	private static boolean referencesBook(AdTableObject ad, Book book) {
+		return containsSubstring(ad, book.getTitle()) || containsSubstring(ad, book.getBookShort());
+	}
+
+	private static boolean containsSubstring(AdTableObject ad, String title) {
+		return !StringUtils.isEmpty(title) && ad.getCampaignName().contains(title);
 	}
 }
