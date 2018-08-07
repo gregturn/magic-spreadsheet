@@ -15,7 +15,10 @@
  */
 package com.greglturnquist.magicspreadsheet;
 
+import static com.greglturnquist.magicspreadsheet.KdpRoyaltyReport.*;
 import static com.greglturnquist.magicspreadsheet.MagicSheets.*;
+import static org.springframework.data.mongodb.core.query.Criteria.*;
+import static org.springframework.data.mongodb.core.query.Query.*;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -43,6 +46,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.data.mongodb.core.MongoOperations;
+import org.springframework.data.mongodb.core.ReactiveMongoOperations;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Service;
 
@@ -58,14 +62,16 @@ class LoaderService {
 	private static DateTimeFormatter DATE_FORMAT2 = DateTimeFormatter.ofPattern("yyyy/MM/dd");
 
 	private final MongoOperations operations;
+	private final ReactiveMongoOperations reactiveOperations;
 	private final AmsDataRepository amsDataRepository;
 	private final AdTableRepository adTableRepository;
 	private final EbookRoyaltyRepository ebookRoyaltyRepository;
 
-	LoaderService(MongoOperations operations, AmsDataRepository amsDataRepository,
+	LoaderService(MongoOperations operations, ReactiveMongoOperations reactiveOperations, AmsDataRepository amsDataRepository,
 				  AdTableRepository adTableRepository, EbookRoyaltyRepository ebookRoyaltyRepository) {
 
 		this.operations = operations;
+		this.reactiveOperations = reactiveOperations;
 		this.amsDataRepository = amsDataRepository;
 		this.adTableRepository = adTableRepository;
 		this.ebookRoyaltyRepository = ebookRoyaltyRepository;
@@ -86,6 +92,15 @@ class LoaderService {
 		return uploadFile(csvFilePart, UPLOAD_ROOT)
 			.then(toReader(csvFilePart.filename(), UPLOAD_ROOT))
 			.flatMap(reader -> loadAmsReport(reader, date))
+			.then();
+	}
+
+
+	Mono<Void> importKdpRoyaltyReport(FilePart kdpFilePart) {
+
+		return uploadFile(kdpFilePart, UPLOAD_ROOT)
+			.then(toInputStream(kdpFilePart, UPLOAD_ROOT))
+			.flatMap(this::loadKdpRoyaltyReport)
 			.then();
 	}
 
@@ -254,6 +269,90 @@ class LoaderService {
 		return Mono.empty();
 	}
 
+	Mono<Void> loadKdpRoyaltyReport(InputStream inputStream) {
+
+		return Mono.fromRunnable(() -> {
+
+			Workbook workbook = null;
+			try {
+				workbook = new XSSFWorkbook(inputStream);
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+
+			log.info("Loading eBook Royalty data...");
+
+			EBOOK_ROYALTY.stream(workbook)
+				.filter(row -> row.getCell(KdpRoyaltyEbookRoyaltyColumn.Title.index()) != null && KdpRoyaltyEbookRoyaltyColumn.Title.cellType(row) != Cell.CELL_TYPE_BLANK)
+				.map(row -> {
+					try {
+						return new EbookRoyaltyDataObject(
+							null,
+							row.getRowNum(),
+							LocalDate.parse(KdpRoyaltyEbookRoyaltyColumn.RoyaltyDate.stringValue(row)),
+							KdpRoyaltyEbookRoyaltyColumn.Title.stringValue(row),
+							KdpRoyaltyEbookRoyaltyColumn.AuthorName.stringValue(row),
+							KdpRoyaltyEbookRoyaltyColumn.ASIN.stringValue(row),
+							KdpRoyaltyEbookRoyaltyColumn.Marketplace.stringValue(row),
+							KdpRoyaltyEbookRoyaltyColumn.RoyaltyType.stringValue(row),
+							KdpRoyaltyEbookRoyaltyColumn.TransactionType.stringValue(row),
+							KdpRoyaltyEbookRoyaltyColumn.NetUnitsSold.cellType(row) == Cell.CELL_TYPE_NUMERIC ? KdpRoyaltyEbookRoyaltyColumn.NetUnitsSold.numericValue(row) : Double.parseDouble(KdpRoyaltyEbookRoyaltyColumn.NetUnitsSold.stringValue(row)),
+							KdpRoyaltyEbookRoyaltyColumn.Royalty.cellType(row) == Cell.CELL_TYPE_NUMERIC ? KdpRoyaltyEbookRoyaltyColumn.Royalty.numericValue(row) : Double.parseDouble(KdpRoyaltyEbookRoyaltyColumn.Royalty.stringValue(row)),
+							KdpRoyaltyEbookRoyaltyColumn.Currency.stringValue(row));
+					} catch (IllegalStateException|IllegalArgumentException|DateTimeParseException e) {
+						log.error("Failed to parse " + EBOOK_ROYALTY.name() + ": rowNum=" + row.getRowNum() + " " + e.getMessage());
+						return null;
+					}
+				})
+				.filter(Objects::nonNull)
+				.filter(ebookRoyaltyDataObject -> !ebookRoyaltyDataObject.getTransactionType().contains("Free"))
+				.forEach(object -> {
+						EbookRoyaltyDataObject item = operations.findOne(query(where("title").is(object.getTitle()).and("royaltyDate").is(object.getRoyaltyDate())), EbookRoyaltyDataObject.class);
+
+						if (item == null) {
+							log.info("Nothing found! Adding " + object);
+							operations.insert(object);
+						} else {
+							log.info("Already found royalty statement for " + object.getTitle() + " on " + object.getRoyaltyDate() + ". Updating...");
+							item.setRoyalty(object.getRoyalty());
+							item.setNetUnitsSold(object.getNetUnitsSold());
+							item.setRoyaltyType(object.getRoyaltyType());
+							operations.save(item);
+						}
+					});
+
+			log.info("Loading KENP Read data...");
+
+			KENP_READ.stream(workbook)
+				.filter(row -> row.getCell(KdpRoyaltyKenpPageReadsColumn.Title.index()) != null && !KdpRoyaltyKenpPageReadsColumn.Title.stringValue(row).equals(""))
+				.map(row -> {
+					try {
+						LocalDate date = LocalDate.parse(KdpRoyaltyKenpPageReadsColumn.Date.stringValue(row));
+						String title = KdpRoyaltyKenpPageReadsColumn.Title.stringValue(row);
+						String author = KdpRoyaltyKenpPageReadsColumn.AuthorName.stringValue(row);
+						String asin = KdpRoyaltyKenpPageReadsColumn.ASIN.stringValue(row);
+						String marketPlace = KdpRoyaltyKenpPageReadsColumn.Marketplace.stringValue(row);
+						double pagesRead = KdpRoyaltyKenpPageReadsColumn.PagesRead.numericValue(row);
+						return new KenpReadDataObject(
+							null,
+							row.getRowNum(),
+							date,
+							title,
+							author,
+							asin,
+							marketPlace,
+							pagesRead);
+					} catch (IllegalStateException|IllegalArgumentException|DateTimeParseException e) {
+						log.error("Failed to parse " + KENP_READ.name() + ": rowNum=" + row.getRowNum() + " " + e.getMessage());
+						return null;
+					}
+				})
+				.filter(Objects::nonNull)
+				.forEach(operations::insert);
+
+		});
+	}
+	
 	Mono<Void> loadAmsReport(Reader reader, LocalDate date) {
 
 		try {
@@ -378,6 +477,12 @@ class LoaderService {
 			.log("uploadFile-fullPath")
 			.map(destFile -> {
 				try {
+
+					File directory = new File(rootDir);
+					if (!directory.exists()) {
+						directory.mkdirs();
+					}
+
 					destFile.createNewFile();
 					return destFile;
 				} catch (IOException e) {
@@ -431,5 +536,15 @@ class LoaderService {
 				throw new RuntimeException(e);
 			}
 		});
+	}
+
+	Mono<Void> deleteAll() {
+
+		return Mono.when(
+			reactiveOperations.dropCollection(AmsDataObject.class),
+			reactiveOperations.dropCollection(AdTableObject.class),
+			reactiveOperations.dropCollection(EbookRoyaltyDataObject.class),
+			reactiveOperations.dropCollection(Book.class),
+			reactiveOperations.dropCollection(KenpReadDataObject.class));
 	}
 }

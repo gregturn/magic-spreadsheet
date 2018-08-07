@@ -16,6 +16,35 @@
     </div>
 
     <div>
+        <p>Royalties not linked to a book</p>
+        <table>
+            <thead>
+                <tr>
+                    <td>Royalty Date</td>
+                    <td>Title</td>
+                    <td>Author Name</td>
+                    <td>ASIN</td>
+                    <td>Net Units Sold</td>
+                    <td>Royalty</td>
+                    <td>Currency</td>
+                    <td><a th:href="@{/createAllBooks}">Create All Books</a></td>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="data : ${royalties}">
+                    <td th:text="${data.royaltyDate}" />
+                    <td th:text="${data.title}" />
+                    <td th:text="${data.authorName}" />
+                    <td th:text="${data.ASIN}" />
+                    <td th:text="${data.netUnitsSold}" />
+                    <td th:text="${data.royalty}" />
+                    <td th:text="${data.currency}" />
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div>
         <form th:action="@{/createBooks}" th:object="${adLinkForm}" method="post">
         <p>Ads not linked to a book</p>
         <table>
@@ -49,7 +78,6 @@
 						/*]]>*/
                     </script>
                 </th><th>Campaign</th><th>Type</th><th>Start</th><th>End</th><th>Budget</th><th>Book Title</th><th>Series</th>
-                <th><a th:href="@{/unlinkedAds}">Guess</a></th>
             </tr>
             </thead>
             <tbody>

@@ -20,6 +20,13 @@
     </ul>
 
     <p>
+        Delete ALL!
+        <form th:method="delete" action="/delete-all">
+            <p><input type="submit" value="DELETE ALL" />
+        </form>
+    </p>
+
+    <p>
         Load new Magic Spreadsheet (and wipe out existing data)
         <form method="post" enctype="multipart/form-data" action="/upload">
             <p><input type="file" name="spreadsheet" /></p>
@@ -32,6 +39,14 @@
         <form method="post" enctype="multipart/form-data" action="/import-ams">
             <p><input type="file" name="csvFile" multiple="multiple" /></p>
             <p><input type="date" name="date" /></p>
+            <p><input type="submit" value="Upload" /></p>
+        </form>
+    </p>
+
+    <p>
+        Import new KDP royalty report
+        <form method="post" enctype="multipart/form-data" action="/import-kdp-royalty">
+            <p><input type="file" name="spreadsheet" multiple="multiple" /></p>
             <p><input type="submit" value="Upload" /></p>
         </form>
     </p>

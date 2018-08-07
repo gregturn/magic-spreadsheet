@@ -15,6 +15,8 @@
  */
 package com.greglturnquist.magicspreadsheet;
 
+import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.text.SimpleDateFormat;
@@ -43,7 +45,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.server.ServerWebExchange;
 
 /**
  * @author Greg Turnquist
@@ -349,20 +350,40 @@ public class MagicSpreadsheetController {
 	@GetMapping("/books")
 	Mono<String> allBooks(Model model) {
 
-		model.addAttribute("books", bookRepository.findAll());
+		model.addAttribute("books", bookRepository.findAll()
+			.sort(Comparator.comparing(Book::getTitle)));
 
 		return Mono.just("books");
 	}
 
-	@DeleteMapping("/books")
-	Mono<String> deleteBook(ServerWebExchange exchange) {
+	@PostMapping("/setBookShort")
+	Mono<String> setBookShort(@ModelAttribute BookAndShort bookShort) {
 
-		return exchange.getFormData()
-			.map(stringStringMultiValueMap -> stringStringMultiValueMap.get("bookTitle"))
-			.flatMap(titleList -> Mono.just(titleList.stream().findFirst()))
-			.flatMap(optionalTitle -> optionalTitle
-				.map(bookTitle -> bookRepository.deleteByTitle(bookTitle).zipWith(wipeOutBookReferencesInAds(bookTitle)))
-				.orElse(Mono.empty()))
+		return bookRepository.findByTitle(bookShort.getBookTitle())
+			.map(book -> {
+				book.setBookShort(bookShort.getBookShort());
+				book.setSeries(bookShort.getBookSeries());
+				return book;
+			})
+			.flatMap(bookRepository::save)
+			.then(Mono.just("redirect:/books"));
+	}
+
+	@Data
+	@NoArgsConstructor
+	static class BookAndShort {
+
+		String bookShort;
+		String bookTitle;
+		String bookSeries;
+	}
+
+	@DeleteMapping("/books")
+	Mono<String> deleteBook(@ModelAttribute BookAndShort bookShort) {
+
+		return Mono.when(
+				bookRepository.deleteByTitle(bookShort.getBookTitle()),
+				wipeOutBookReferencesInAds(bookShort.getBookTitle()))
 			.then(Mono.just("redirect:/books"));
 	}
 
@@ -383,7 +404,10 @@ public class MagicSpreadsheetController {
 		model.addAttribute("adLinkForm", new AdBookLink());
 
 		model.addAttribute("books", bookRepository.findAll()
-			.map(book -> Tuples.of(book.getTitle(), book.getSeries())));
+			.map(book -> Tuples.of(book.getTitle(), book.getBookShort())));
+
+		model.addAttribute("royalties", adService.unlinkedRoyalties()
+			.map(EbookRoyaltyDataDTO::new));
 
 		model.addAttribute("adTable", adService.unlinkedAds()
 			.flatMap(adTableObject -> bestGuess(adTableObject).zipWith(Mono.just(adTableObject)))
@@ -395,11 +419,24 @@ public class MagicSpreadsheetController {
 		return Mono.just("unlinkedAds");
 	}
 
-	@GetMapping("createAllAds")
+	@GetMapping("/createAllBooks")
+	Mono<String> createAllBooks() {
+
+		return adService.unlinkedRoyalties()
+			.map(Utils::royaltyToBook)
+			.sort(Comparator.comparing(Book::getTitle))
+			.distinct()
+			.flatMap(bookRepository::save)
+			.then(Mono.just("redirect:/unlinkedAds"));
+	}
+
+	@GetMapping("/createAllAds")
 	Mono<String> createAllAds() {
 
 		return adService.unlinkedAmsData()
 			.map(Utils::amsDataToAdData)
+			.sort(Comparator.comparing(AdTableObject::getCampaignName))
+			.distinct()
 			.flatMap(adTableRepository::save)
 			.then(Mono.just("redirect:/unlinkedAds"));
 	}
@@ -473,6 +510,22 @@ public class MagicSpreadsheetController {
 				}
 			})
 			.log("import-done")
+			.then(Mono.just("redirect:/"));
+	}
+
+	@PostMapping("/import-kdp-royalty")
+	Mono<String> importKdpRoyaltyReport(@RequestPart(name = "spreadsheet") Flux<FilePart> kdpReport) {
+
+		return kdpReport
+			.sort(Comparator.comparing(FilePart::filename))
+			.flatMap(loaderService::importKdpRoyaltyReport)
+			.then(Mono.just("redirect:/"));
+	}
+
+	@DeleteMapping("/delete-all")
+	Mono<String> deleteAll() {
+
+		return loaderService.deleteAll()
 			.then(Mono.just("redirect:/"));
 	}
 

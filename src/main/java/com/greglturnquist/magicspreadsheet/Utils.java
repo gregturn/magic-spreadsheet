@@ -45,6 +45,22 @@ class Utils {
 		);
 	}
 
+
+	static Book royaltyToBook(EbookRoyaltyDataObject ebookRoyaltyDataObject) {
+
+		return new Book(
+			null,
+			-1,
+			-1,
+			ebookRoyaltyDataObject.getTitle(),
+			ebookRoyaltyDataObject.getAuthorName(),
+			"",
+			"",
+			ebookRoyaltyDataObject.getASIN(),
+			0.1
+		);
+	}
+
 	/**
 	 * Invert a {@link Boolean} condition, that is wrapped by a {@link Mono}.
 	 * 

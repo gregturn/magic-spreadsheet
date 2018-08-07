@@ -212,4 +212,13 @@ class AdService {
 			.flatMapMany(titles -> adTableRepository.findAll()
 				.filter(adTableObject -> !titles.contains(adTableObject.getBookTitle())));
 	}
+
+	Flux<EbookRoyaltyDataObject> unlinkedRoyalties() {
+
+		return bookRepository.findAll()
+			.map(Book::getTitle)
+			.collectList()
+			.flatMapMany(titles -> ebookRoyaltyRepository.findAll()
+				.filter(ebookRoyaltyDataObject -> !titles.contains(ebookRoyaltyDataObject.getTitle())));
+	}
 }
