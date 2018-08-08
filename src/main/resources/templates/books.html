@@ -38,8 +38,9 @@
                 <td th:text="${book.KENPC}" />
                 <td>
                     <form th:action="@{/setBookShort}" th:method="post">
-                        <input name="bookShort" placeholder="Short" />
-                        <input name="bookSeries" placeholder="Series" />
+                        <input name="bookShort" th:value="${book.bookShort}" placeholder="Short" />
+                        <input name="bookSeries" th:value="${book.series}" placeholder="Series" />
+                        <input name="kenpc" th:value="${book.KENPC}" placeholder="KEPNC" />
                         <button name="bookTitle" th:value="${book.title}">Set Details</button>
                     </form>
                 </td>

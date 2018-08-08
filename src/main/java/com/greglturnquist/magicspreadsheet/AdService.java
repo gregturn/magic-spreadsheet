@@ -78,14 +78,18 @@ class AdService {
 	}
 
 	private Mono<Double> unitsSold(String bookTitle, Optional<LocalDate> date) {
-		
-		return ebookRoyaltyRepository.findByTitle(bookTitle)
+
+		return date
+			.map(after -> ebookRoyaltyRepository.findByTitleAndRoyaltyDateAfter(bookTitle, after))
+			.orElse(ebookRoyaltyRepository.findByTitle(bookTitle))
 			.reduce(0.0, (counter, ebookRoyaltyData) -> counter + ebookRoyaltyData.getNetUnitsSold());
 	}
 
 	private Mono<Double> totalPagesRead(String bookTitle, Optional<LocalDate> date) {
 
-		return kenpReadRepository.findByTitle(bookTitle)
+		return date
+			.map(after -> kenpReadRepository.findByTitleAndOrderDateAfter(bookTitle, after))
+			.orElse(kenpReadRepository.findByTitle(bookTitle))
 			.reduce(0.0, (counter, kenpReadData) -> counter + kenpReadData.getPagesRead());
 	}
 

@@ -331,6 +331,12 @@ public class MagicSpreadsheetController {
 		return Mono.just("individualReport");
 	}
 
+	private static Flux<Tuple2<LocalDate, LocalDate>> rangeOfWindows(int window) {
+
+		return Flux.range(0, window)
+			.map(daysAgo -> Tuples.of(LocalDate.now().minusDays(window), LocalDate.now().minusDays(daysAgo)));
+	}
+
 	private Mono<EarningsService.TotalSales> roi(String title, LocalDate beginning, LocalDate end) {
 		return earningsService.totalCombinedRevenue(title, beginning, end)
 			.map(EarningsService.TotalSales::getTotal)
@@ -363,6 +369,7 @@ public class MagicSpreadsheetController {
 			.map(book -> {
 				book.setBookShort(bookShort.getBookShort());
 				book.setSeries(bookShort.getBookSeries());
+				book.setKENPC(bookShort.getKenpc());
 				return book;
 			})
 			.flatMap(bookRepository::save)
@@ -376,6 +383,7 @@ public class MagicSpreadsheetController {
 		String bookShort;
 		String bookTitle;
 		String bookSeries;
+		double kenpc;
 	}
 
 	@DeleteMapping("/books")
