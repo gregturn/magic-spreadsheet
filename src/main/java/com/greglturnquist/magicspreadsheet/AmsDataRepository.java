@@ -18,6 +18,7 @@ package com.greglturnquist.magicspreadsheet;
 import java.time.LocalDate;
 
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
 
@@ -33,6 +34,10 @@ interface AmsDataRepository extends ReactiveMongoRepository<AmsDataObject, Strin
 	Flux<AmsDataObject> findByDateAfter(LocalDate date, Sort sort);
 
 	Flux<AmsDataObject> findByCampaignNameAndDate(String campaignName, LocalDate date);
+
+	Mono<Boolean> existsByCampaignNameAndDate(String campaignName, LocalDate date);
+
+	Mono<Boolean> existsByCampaignNameAndDateAfter(String campaignName, LocalDate date);
 
 	Flux<AmsDataObject> findByCampaignNameAndDateBetween(String campaignName, LocalDate beginning, LocalDate end);
 }

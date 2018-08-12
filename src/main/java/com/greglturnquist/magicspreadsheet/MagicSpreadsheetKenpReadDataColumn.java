@@ -15,10 +15,7 @@
  */
 package com.greglturnquist.magicspreadsheet;
 
-import lombok.extern.slf4j.Slf4j;
-
-import java.time.LocalDate;
-import java.time.ZoneId;
+import java.util.Date;
 import java.util.Optional;
 
 import org.apache.poi.ss.usermodel.Cell;
@@ -27,27 +24,18 @@ import org.apache.poi.ss.usermodel.Row;
 /**
  * @author Greg Turnquist
  */
-@Slf4j
-enum AmsDataColumn {
+enum MagicSpreadsheetKenpReadDataColumn {
 
-	Status(6),
-	CampaignName(7),
-	Type(8),
-	StartDate(9),
-	EndDate(10),
-	Budget(11),
-	Spend(12),
-	Impressions(13),
-	Clicks(14),
-	AverageCpc(15),
-	DetailedPageView(16),
-	TotalSales(17),
-	ACoS(18),
-	Date(19);
+	OrderDate(3),
+	Title(4),
+	AuthorName(5),
+	ASIN(6),
+	Marketplace(7),
+	PagesRead(8);
 
 	private final int index;
 
-	AmsDataColumn(int index) {
+	MagicSpreadsheetKenpReadDataColumn(int index) {
 		this.index = index;
 	}
 
@@ -71,11 +59,11 @@ enum AmsDataColumn {
 		return row.getCell(this.index).getStringCellValue();
 	}
 
-	public LocalDate dateValue(Row row) {
-		return row.getCell(this.index).getDateCellValue().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+	public java.util.Date dateValue(Row row) {
+		return row.getCell(this.index).getDateCellValue();
 	}
 
-	public Optional<LocalDate> optionalDateValue(Row row) {
+	public Optional<Date> optionalDateValue(Row row) {
 		return this.cellType(row) == Cell.CELL_TYPE_NUMERIC ? Optional.of(this.dateValue(row)) : Optional.empty();
 	}
 

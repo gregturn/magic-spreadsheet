@@ -17,6 +17,7 @@ package com.greglturnquist.magicspreadsheet;
 
 import static com.greglturnquist.magicspreadsheet.KdpRoyaltyReport.*;
 import static com.greglturnquist.magicspreadsheet.MagicSheets.*;
+import static com.greglturnquist.magicspreadsheet.Utils.not;
 import static org.springframework.data.mongodb.core.query.Criteria.*;
 import static org.springframework.data.mongodb.core.query.Query.*;
 
@@ -126,23 +127,23 @@ class LoaderService {
 		log.info("Loading AMS Data...");
 
 		AMS_DATA.stream(workbook)
-			.filter(row -> row.getCell(AmsDataColumn.Status.index()) != null)
+			.filter(row -> row.getCell(MagicSpreadsheetAmsDataColumn.Status.index()) != null)
 			.map(row -> {
 				try {
 					return new AmsDataObject(
 						null,
 						row.getRowNum(),
-						AmsDataColumn.Status.stringValue(row),
-						AmsDataColumn.CampaignName.stringValue(row),
-						AmsDataColumn.Type.stringValue(row),
-						AmsDataColumn.StartDate.dateValue(row),
-						AmsDataColumn.EndDate.optionalDateValue(row),
-						AmsDataColumn.Budget.numericValue(row),
-						AmsDataColumn.Spend.numericValue(row),
-						AmsDataColumn.Impressions.optionalNumericValue(row),
-						AmsDataColumn.Clicks.optionalNumericValue(row),
-						AmsDataColumn.AverageCpc.optionalNumericValue(row),
-						AmsDataColumn.Date.dateValue(row));
+						MagicSpreadsheetAmsDataColumn.Status.stringValue(row),
+						MagicSpreadsheetAmsDataColumn.CampaignName.stringValue(row),
+						MagicSpreadsheetAmsDataColumn.Type.stringValue(row),
+						MagicSpreadsheetAmsDataColumn.StartDate.dateValue(row),
+						MagicSpreadsheetAmsDataColumn.EndDate.optionalDateValue(row),
+						MagicSpreadsheetAmsDataColumn.Budget.numericValue(row),
+						MagicSpreadsheetAmsDataColumn.Spend.numericValue(row),
+						MagicSpreadsheetAmsDataColumn.Impressions.optionalNumericValue(row),
+						MagicSpreadsheetAmsDataColumn.Clicks.optionalNumericValue(row),
+						MagicSpreadsheetAmsDataColumn.AverageCpc.optionalNumericValue(row),
+						MagicSpreadsheetAmsDataColumn.Date.dateValue(row));
 				} catch (IllegalStateException|NullPointerException e) {
 					log.error("Failed to parse " + AMS_DATA.name() + ": rowNum=" + row.getRowNum() + " " + e.getMessage());
 					return null;
@@ -158,19 +159,19 @@ class LoaderService {
 		log.info("Loading Ad Table Data...");
 
 		AD_TABLE.stream(workbook)
-			.filter(row -> !AdDataColumn.CampaignName.stringValue(row).equals(""))
+			.filter(row -> !MagicSpreadsheetAdDataColumn.CampaignName.stringValue(row).equals(""))
 			.map(row -> {
 				try {
 					return new AdTableObject(
 						null,
 						row.getRowNum(),
-						AdDataColumn.CampaignName.stringValue(row),
-						AdDataColumn.Type.stringValue(row),
-						AdDataColumn.Start.dateValue(row),
-						AdDataColumn.End.optionalDateValue(row),
-						AdDataColumn.Budget.numericValue(row),
-						AdDataColumn.BookTitle.stringValue(row),
-						AdDataColumn.Series.stringValue(row));
+						MagicSpreadsheetAdDataColumn.CampaignName.stringValue(row),
+						MagicSpreadsheetAdDataColumn.Type.stringValue(row),
+						MagicSpreadsheetAdDataColumn.Start.dateValue(row),
+						MagicSpreadsheetAdDataColumn.End.optionalDateValue(row),
+						MagicSpreadsheetAdDataColumn.Budget.numericValue(row),
+						MagicSpreadsheetAdDataColumn.BookTitle.stringValue(row),
+						MagicSpreadsheetAdDataColumn.Series.stringValue(row));
 				} catch (IllegalStateException e) {
 					log.error("Failed to parse " + AD_TABLE.name() + ": rowNum=" + row.getRowNum());
 					return null;
@@ -186,22 +187,22 @@ class LoaderService {
 		log.info("Loading eBook Royalty data...");
 
 		EBOOK_ROYALTY_DATA.stream(workbook)
-			.filter(row -> row.getCell(EbookRoyaltyDataColumn.Title.index()) != null && EbookRoyaltyDataColumn.Title.cellType(row) != Cell.CELL_TYPE_BLANK)
+			.filter(row -> row.getCell(MagicSpreadsheetEbookRoyaltyDataColumn.Title.index()) != null && MagicSpreadsheetEbookRoyaltyDataColumn.Title.cellType(row) != Cell.CELL_TYPE_BLANK)
 			.map(row -> {
 				try {
 					return new EbookRoyaltyDataObject(
 						null,
 						row.getRowNum(),
-						LocalDate.parse(EbookRoyaltyDataColumn.RoyaltyDate.stringValue(row)),
-						EbookRoyaltyDataColumn.Title.stringValue(row),
-						EbookRoyaltyDataColumn.AuthorName.stringValue(row),
-						EbookRoyaltyDataColumn.ASIN.stringValue(row),
-						EbookRoyaltyDataColumn.Marketplace.stringValue(row),
-						EbookRoyaltyDataColumn.RoyaltyType.stringValue(row),
-						EbookRoyaltyDataColumn.TransationType.stringValue(row),
-						EbookRoyaltyDataColumn.NetUnitsSold.cellType(row) == Cell.CELL_TYPE_NUMERIC ? EbookRoyaltyDataColumn.NetUnitsSold.numericValue(row) : Double.parseDouble(EbookRoyaltyDataColumn.NetUnitsSold.stringValue(row)),
-						EbookRoyaltyDataColumn.Royalty.cellType(row) == Cell.CELL_TYPE_NUMERIC ? EbookRoyaltyDataColumn.Royalty.numericValue(row) : Double.parseDouble(EbookRoyaltyDataColumn.Royalty.stringValue(row)),
-						EbookRoyaltyDataColumn.Currency.stringValue(row));
+						LocalDate.parse(MagicSpreadsheetEbookRoyaltyDataColumn.RoyaltyDate.stringValue(row)),
+						MagicSpreadsheetEbookRoyaltyDataColumn.Title.stringValue(row),
+						MagicSpreadsheetEbookRoyaltyDataColumn.AuthorName.stringValue(row),
+						MagicSpreadsheetEbookRoyaltyDataColumn.ASIN.stringValue(row),
+						MagicSpreadsheetEbookRoyaltyDataColumn.Marketplace.stringValue(row),
+						MagicSpreadsheetEbookRoyaltyDataColumn.RoyaltyType.stringValue(row),
+						MagicSpreadsheetEbookRoyaltyDataColumn.TransationType.stringValue(row),
+						MagicSpreadsheetEbookRoyaltyDataColumn.NetUnitsSold.cellType(row) == Cell.CELL_TYPE_NUMERIC ? MagicSpreadsheetEbookRoyaltyDataColumn.NetUnitsSold.numericValue(row) : Double.parseDouble(MagicSpreadsheetEbookRoyaltyDataColumn.NetUnitsSold.stringValue(row)),
+						MagicSpreadsheetEbookRoyaltyDataColumn.Royalty.cellType(row) == Cell.CELL_TYPE_NUMERIC ? MagicSpreadsheetEbookRoyaltyDataColumn.Royalty.numericValue(row) : Double.parseDouble(MagicSpreadsheetEbookRoyaltyDataColumn.Royalty.stringValue(row)),
+						MagicSpreadsheetEbookRoyaltyDataColumn.Currency.stringValue(row));
 				} catch (IllegalStateException|IllegalArgumentException|DateTimeParseException e) {
 					log.error("Failed to parse " + EBOOK_ROYALTY_DATA.name() + ": rowNum=" + row.getRowNum());
 					return null;
@@ -218,19 +219,19 @@ class LoaderService {
 		log.info("Loading Book Setup Data...");
 
 		BOOKS_SETUP.stream(workbook)
-			.filter(row -> row.getCell(BookSetupColumn.Counter.index()) != null && !BookSetupColumn.BookTitle.stringValue(row).equals(""))
+			.filter(row -> row.getCell(MagicSpreadsheetBookSetupColumn.Counter.index()) != null && !MagicSpreadsheetBookSetupColumn.BookTitle.stringValue(row).equals(""))
 			.map(row -> {
 				try {
 					return new Book(
 						null,
 						row.getRowNum(),
-						new Double(BookSetupColumn.Counter.numericValue(row)).longValue(),
-						BookSetupColumn.BookTitle.stringValue(row),
-						BookSetupColumn.AuthorName.stringValue(row),
-						BookSetupColumn.BookShort.stringValue(row),
-						BookSetupColumn.SeriesTitle.stringValue(row),
-						BookSetupColumn.AmazonASIN.stringValue(row),
-						BookSetupColumn.KENPC.numericValue(row));
+						new Double(MagicSpreadsheetBookSetupColumn.Counter.numericValue(row)).longValue(),
+						MagicSpreadsheetBookSetupColumn.BookTitle.stringValue(row),
+						MagicSpreadsheetBookSetupColumn.AuthorName.stringValue(row),
+						MagicSpreadsheetBookSetupColumn.BookShort.stringValue(row),
+						MagicSpreadsheetBookSetupColumn.SeriesTitle.stringValue(row),
+						MagicSpreadsheetBookSetupColumn.AmazonASIN.stringValue(row),
+						MagicSpreadsheetBookSetupColumn.KENPC.numericValue(row));
 				} catch (IllegalStateException|IllegalArgumentException e) {
 					log.error("Failed to parse " + BOOKS_SETUP.name() + ": rowNum=" + row.getRowNum());
 					return null;
@@ -246,18 +247,18 @@ class LoaderService {
 		log.info("Loading KENP Read data...");
 
 		KENP_READ_DATA.stream(workbook)
-			.filter(row -> row.getCell(KenpReadDataColumn.Title.index()) != null && !KenpReadDataColumn.Title.stringValue(row).equals(""))
+			.filter(row -> row.getCell(MagicSpreadsheetKenpReadDataColumn.Title.index()) != null && !MagicSpreadsheetKenpReadDataColumn.Title.stringValue(row).equals(""))
 			.map(row -> {
 				try {
 					return new KenpReadDataObject(
 						null,
 						row.getRowNum(),
-						LocalDate.parse(KenpReadDataColumn.OrderDate.stringValue(row)),
-						KenpReadDataColumn.Title.stringValue(row),
-						KenpReadDataColumn.AuthorName.stringValue(row),
-						KenpReadDataColumn.ASIN.stringValue(row),
-						KenpReadDataColumn.Marketplace.stringValue(row),
-						KenpReadDataColumn.PagesRead.numericValue(row));
+						LocalDate.parse(MagicSpreadsheetKenpReadDataColumn.OrderDate.stringValue(row)),
+						MagicSpreadsheetKenpReadDataColumn.Title.stringValue(row),
+						MagicSpreadsheetKenpReadDataColumn.AuthorName.stringValue(row),
+						MagicSpreadsheetKenpReadDataColumn.ASIN.stringValue(row),
+						MagicSpreadsheetKenpReadDataColumn.Marketplace.stringValue(row),
+						MagicSpreadsheetKenpReadDataColumn.PagesRead.numericValue(row));
 				} catch (IllegalStateException|IllegalArgumentException|DateTimeParseException e) {
 					log.error("Failed to parse " + KENP_READ_DATA.name() + ": rowNum=" + row.getRowNum());
 					return null;
@@ -327,28 +328,33 @@ class LoaderService {
 				.filter(row -> row.getCell(KdpRoyaltyKenpPageReadsColumn.Title.index()) != null && !KdpRoyaltyKenpPageReadsColumn.Title.stringValue(row).equals(""))
 				.map(row -> {
 					try {
-						LocalDate date = LocalDate.parse(KdpRoyaltyKenpPageReadsColumn.Date.stringValue(row));
-						String title = KdpRoyaltyKenpPageReadsColumn.Title.stringValue(row);
-						String author = KdpRoyaltyKenpPageReadsColumn.AuthorName.stringValue(row);
-						String asin = KdpRoyaltyKenpPageReadsColumn.ASIN.stringValue(row);
-						String marketPlace = KdpRoyaltyKenpPageReadsColumn.Marketplace.stringValue(row);
-						double pagesRead = KdpRoyaltyKenpPageReadsColumn.PagesRead.numericValue(row);
 						return new KenpReadDataObject(
 							null,
 							row.getRowNum(),
-							date,
-							title,
-							author,
-							asin,
-							marketPlace,
-							pagesRead);
+							LocalDate.parse(KdpRoyaltyKenpPageReadsColumn.Date.stringValue(row)),
+							KdpRoyaltyKenpPageReadsColumn.Title.stringValue(row),
+							KdpRoyaltyKenpPageReadsColumn.AuthorName.stringValue(row),
+							KdpRoyaltyKenpPageReadsColumn.ASIN.stringValue(row),
+							KdpRoyaltyKenpPageReadsColumn.Marketplace.stringValue(row),
+							KdpRoyaltyKenpPageReadsColumn.PagesRead.numericValue(row));
 					} catch (IllegalStateException|IllegalArgumentException|DateTimeParseException e) {
 						log.error("Failed to parse " + KENP_READ.name() + ": rowNum=" + row.getRowNum() + " " + e.getMessage());
 						return null;
 					}
 				})
 				.filter(Objects::nonNull)
-				.forEach(operations::insert);
+				.forEach(object -> {
+					KenpReadDataObject item = operations.findOne(query(where("title").is(object.getTitle()).and("orderDate").is(object.getOrderDate())), KenpReadDataObject.class);
+
+					if (item == null) {
+						log.info("Nothing found! Adding " + object);
+						operations.insert(object);
+					} else {
+						log.info("Already found royalty statement for " + object.getTitle() + " on " + object.getOrderDate() + ". Updating...");
+						item.setPagesRead(object.getPagesRead());
+						operations.save(item);
+					}
+				});
 
 		});
 	}
@@ -387,7 +393,9 @@ class LoaderService {
 					}
 				})
 				.log("importAms-zipWithLatestAmsRecord")
-//				.filterWhen(amsDataObject -> adTableRepository.existsByCampaignName(amsDataObject.getCampaignName()))
+				.filterWhen(amsDataObject -> not(amsDataRepository.existsByCampaignNameAndDate(amsDataObject.getCampaignName(), amsDataObject.getDate())))
+				.filterWhen(amsDataObject -> not(amsDataRepository.existsByCampaignNameAndDateAfter(amsDataObject.getCampaignName(), amsDataObject.getDate())))
+				.log("importAms-filterOutAlreadyLoadedData")
 				.flatMap(amsDataObject -> Mono.zip(
 					totalImpressions(amsDataObject.getCampaignName()),
 					totalClicks(amsDataObject.getCampaignName()),

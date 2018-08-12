@@ -24,24 +24,19 @@ import org.apache.poi.ss.usermodel.Row;
 /**
  * @author Greg Turnquist
  */
-enum EbookRoyaltyDataColumn {
+enum MagicSpreadsheetBookSetupColumn {
 
-	RoyaltyDate(4),
-	Title(5),
-	AuthorName(6),
-	ASIN(7),
-	Marketplace(8),
-	RoyaltyType(9),
-	TransationType(10),
-	UnitsSold(11),
-	UnitsRefunded(12),
-	NetUnitsSold(13),
-	Royalty(18),
-	Currency(19);
+	Counter(0),
+	BookTitle(1),
+	AuthorName(2),
+	BookShort(3),
+	SeriesTitle(4),
+	AmazonASIN(5),
+	KENPC(6);
 
 	private final int index;
 
-	EbookRoyaltyDataColumn(int index) {
+	MagicSpreadsheetBookSetupColumn(int index) {
 		this.index = index;
 	}
 

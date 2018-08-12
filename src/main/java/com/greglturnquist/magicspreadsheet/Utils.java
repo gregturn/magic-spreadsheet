@@ -19,6 +19,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 
 import org.apache.poi.ss.usermodel.Row;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 /**
@@ -52,13 +53,21 @@ class Utils {
 			null,
 			-1,
 			-1,
-			ebookRoyaltyDataObject.getTitle(),
+			mainTitle(ebookRoyaltyDataObject.getTitle()),
 			ebookRoyaltyDataObject.getAuthorName(),
 			"",
 			"",
 			ebookRoyaltyDataObject.getASIN(),
 			0.1
 		);
+	}
+
+	static Mono<Book> bestGuess(Flux<Book> books, AdTableObject ad) {
+
+		return books
+			.filter(ad::referencesBook)
+			.next()
+			.switchIfEmpty(Mono.just(Book.NONE));
 	}
 
 	/**
@@ -70,5 +79,9 @@ class Utils {
 	static Mono<Boolean> not(Mono<Boolean> condition) {
 		return condition
 			.map(aBoolean -> !aBoolean);
+	}
+
+	static String mainTitle(String title) {
+		return title.split(":")[0];
 	}
 }

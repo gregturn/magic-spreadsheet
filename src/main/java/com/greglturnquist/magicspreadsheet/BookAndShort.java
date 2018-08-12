@@ -15,39 +15,18 @@
  */
 package com.greglturnquist.magicspreadsheet;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
-
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+import lombok.NoArgsConstructor;
 
 /**
  * @author Greg Turnquist
  */
 @Data
-@AllArgsConstructor
-@Document
-class Book {
+@NoArgsConstructor
+class BookAndShort {
 
-	@Id String id;
-	int rowNum;
-	long number;
-	String title;
-	String author;
 	String bookShort;
-	String series;
-	String ASIN;
-	double KENPC;
-
-	static final Book NONE = new Book(
-		"",
-		-1,
-		-1,
-		"",
-		"",
-		"",
-		"",
-		"",
-		0.1
-	);
+	String bookTitle;
+	String bookSeries;
+	double kenpc;
 }

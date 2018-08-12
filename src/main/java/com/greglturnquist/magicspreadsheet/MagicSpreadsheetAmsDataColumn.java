@@ -15,7 +15,10 @@
  */
 package com.greglturnquist.magicspreadsheet;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Optional;
 
 import org.apache.poi.ss.usermodel.Cell;
@@ -24,19 +27,27 @@ import org.apache.poi.ss.usermodel.Row;
 /**
  * @author Greg Turnquist
  */
-enum AdDataColumn {
+@Slf4j
+enum MagicSpreadsheetAmsDataColumn {
 
-	CampaignName(1),
-	Type(2),
-	Start(3),
-	End(4),
-	Budget(5),
-	BookTitle(6),
-	Series(7);
+	Status(6),
+	CampaignName(7),
+	Type(8),
+	StartDate(9),
+	EndDate(10),
+	Budget(11),
+	Spend(12),
+	Impressions(13),
+	Clicks(14),
+	AverageCpc(15),
+	DetailedPageView(16),
+	TotalSales(17),
+	ACoS(18),
+	Date(19);
 
 	private final int index;
 
-	AdDataColumn(int index) {
+	MagicSpreadsheetAmsDataColumn(int index) {
 		this.index = index;
 	}
 
@@ -61,7 +72,7 @@ enum AdDataColumn {
 	}
 
 	public LocalDate dateValue(Row row) {
-		return Utils.dateValue(this.index, row);
+		return row.getCell(this.index).getDateCellValue().toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
 	}
 
 	public Optional<LocalDate> optionalDateValue(Row row) {

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Magic Spreadsheet - Spring Boot style</title>
+    <link rel="stylesheet" href="/main.css" />
+</head>
+<body>
+
+    <h1>Magic Spreadsheet - Spring Boot style</h1>
+
+    <div>
+        <ul>
+            <li><a th:href="@{/}">Home</a></li>
+        </ul>
+    </div>
+
+    <div>
+        <form>
+            <fieldset>
+                <p>Filter:</p>
+                <div th:each="filterOption : ${filterOptions}">
+                    <input type="radio" th:id="${filterOption.window}" name="window" th:value="${filterOption.window}" th:checked="${filterOption.checked}" />
+                    <label th:for="${filterOption.window}" th:text="${filterOption.label}" />
+                </div>
+                <div>
+                    <button type="submit">Apply</button>
+                </div>
+            </fieldset>
+        </form>
+    </div>
+    
+    <div>
+        <table>
+            <thead>
+            <tr>
+                <th>Date</th><th>Title</th><th>Author</th><th>Pages Read</th><th>Market Place</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="data : ${royaltyData}">
+                <td th:text="${data.orderDate}" />
+                <td th:text="${data.title}" />
+                <td th:text="${data.author}" />
+                <td th:text="${data.pagesRead}" />
+                <td th:text="${data.marketPlace}" />
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+</body>
+</html>

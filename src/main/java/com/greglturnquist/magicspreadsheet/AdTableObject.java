@@ -23,6 +23,7 @@ import java.util.Optional;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.util.StringUtils;
 
 /**
  * @author Greg Turnquist
@@ -41,4 +42,20 @@ class AdTableObject {
 	double budget;
 	String bookTitle;
 	String series;
+
+	boolean referencesBook(Book book) {
+		return
+			!StringUtils.isEmpty(book.getTitle()) && this.campaignName.contains(book.getTitle())
+			||
+			!StringUtils.isEmpty(book.getBookShort()) && this.campaignName.contains(book.getBookShort());
+	}
+
+	AdTableObject updateAd(Book book) {
+
+		this.setBookTitle(book.getTitle());
+		this.setSeries(book.getSeries());
+
+		return this;
+	}
+
 }

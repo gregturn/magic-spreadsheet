@@ -19,6 +19,7 @@ import java.time.LocalDate;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
 
 /**
@@ -26,11 +27,13 @@ import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
  */
 interface KenpReadRepository extends ReactiveMongoRepository<KenpReadDataObject, String> {
 
-	Flux<KenpReadDataObject> findByTitle(String title);
+	Flux<KenpReadDataObject> findByTitleLike(String title);
 
 	Mono<KenpReadDataObject> findByTitleAndOrderDate(String title, LocalDate date);
 
-	Flux<KenpReadDataObject> findByTitleAndOrderDateAfter(String title, LocalDate date);
+	Flux<KenpReadDataObject> findByTitleLikeAndOrderDateAfter(String title, LocalDate date);
 
 	Flux<KenpReadDataObject> findByTitleAndOrderDateBetween(String title, LocalDate earlier, LocalDate later);
+
+	Flux<KenpReadDataObject> findByOrderDateAfter(LocalDate localDate, Sort sortByDateAndCampaignName);
 }

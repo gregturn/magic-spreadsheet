@@ -15,36 +15,25 @@
  */
 package com.greglturnquist.magicspreadsheet;
 
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import static com.greglturnquist.magicspreadsheet.Utils.bestGuess;
+
 import lombok.extern.slf4j.Slf4j;
 
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
-import java.time.format.DateTimeParseException;
-import java.util.Arrays;
 import java.util.Comparator;
-import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.ResponseBody;
 
 /**
  * @author Greg Turnquist
@@ -53,168 +42,27 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @Slf4j
 public class MagicSpreadsheetController {
 
-	private static String UPLOAD_ROOT = "upload-dir";
-	private static final SimpleDateFormat SIMPLE_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
-
-	private final AmsDataRepository amsDataRepository;
 	private final AdTableRepository adTableRepository;
 	private final AdService adService;
 	private final LoaderService loaderService;
 	private final EarningsService earningsService;
-	private final EbookRoyaltyRepository ebookRoyaltyRepository;
 	private final BookRepository bookRepository;
 
-	public MagicSpreadsheetController(AmsDataRepository amsDataRepository,
-									  AdTableRepository adTableRepository,
+	public MagicSpreadsheetController(AdTableRepository adTableRepository,
 									  AdService adService, LoaderService loaderService,
 									  EarningsService earningsService,
-									  EbookRoyaltyRepository ebookRoyaltyRepository,
 									  BookRepository bookRepository) {
 
-		this.amsDataRepository = amsDataRepository;
 		this.adTableRepository = adTableRepository;
 		this.adService = adService;
 		this.loaderService = loaderService;
 		this.earningsService = earningsService;
-		this.ebookRoyaltyRepository = ebookRoyaltyRepository;
 		this.bookRepository = bookRepository;
 	}
 
 	@GetMapping("/")
 	Mono<String> index(Model model) {
 		return Mono.just("index");
-	}
-
-	@GetMapping("/ads")
-	Mono<String> ads(Model model) {
-
-		model.addAttribute("adTable", adTableRepository.findAll().map(AdTableDTO::new));
-
-		return Mono.just("ads");
-	}
-
-	@GetMapping("/rawRoyaltyData")
-	Mono<String> rawRoyaltyData(@RequestParam(name = "window", required = false) Optional<String> optionalWindow, Model model) {
-
-		String window = optionalWindow.orElse("all");
-
-		model.addAttribute("filterOptions", Arrays.asList(
-			new FilterOption("all", "Lifetime", window.equals("all")),
-			new FilterOption("90days", "Last 90 days", window.equals("90days")),
-			new FilterOption("30days", "Last 30 days", window.equals("30days")),
-			new FilterOption("15days", "Last 15 days", window.equals("15days"))
-		));
-
-		Sort sortByDateAndCampaignName = Sort.by("royaltyDate", "title");
-
-		if ("all".equals(window)) {
-
-			model.addAttribute("royaltyData", ebookRoyaltyRepository
-				.findAll(sortByDateAndCampaignName)
-				.map(EbookRoyaltyDataDTO::new));
-
-		} else if ("90days".equals(window)) {
-
-			model.addAttribute("royaltyData", ebookRoyaltyRepository
-				.findByRoyaltyDateAfter(LocalDate.now().minusDays(90), sortByDateAndCampaignName)
-				.map(EbookRoyaltyDataDTO::new));
-
-		} else if ("30days".equals(window)) {
-
-			model.addAttribute("royaltyData", ebookRoyaltyRepository
-				.findByRoyaltyDateAfter(LocalDate.now().minusDays(30), sortByDateAndCampaignName)
-				.map(EbookRoyaltyDataDTO::new));
-
-		} else if ("15days".equals(window)) {
-
-			model.addAttribute("royaltyData", ebookRoyaltyRepository
-				.findByRoyaltyDateAfter(LocalDate.now().minusDays(15), sortByDateAndCampaignName)
-				.map(EbookRoyaltyDataDTO::new));
-		}
-
-		return Mono.just("rawRoyaltyData");
-	}
-
-	@GetMapping("/rawAmsData")
-	Mono<String> rawAmsData(@RequestParam(name = "window", required = false) Optional<String> optionalWindow, Model model) {
-
-		String window = optionalWindow.orElse("all");
-		
-		model.addAttribute("filterOptions", Arrays.asList(
-			new FilterOption("all", "Lifetime", window.equals("all")),
-			new FilterOption("90days", "Last 90 days", window.equals("90days")),
-			new FilterOption("30days", "Last 30 days", window.equals("30days")),
-			new FilterOption("15days", "Last 15 days", window.equals("15days"))
-		));
-
-		Sort sortByDateAndCampaignName = Sort.by("date", "campaignName");
-
-		if ("all".equals(window)) {
-
-			model.addAttribute("amsData", amsDataRepository
-				.findAll(sortByDateAndCampaignName)
-				.map(AmsDataDTO::new));
-
-		} else if ("90days".equals(window)) {
-
-			model.addAttribute("amsData", amsDataRepository
-				.findByDateAfter(LocalDate.now().minusDays(90), sortByDateAndCampaignName)
-				.map(AmsDataDTO::new));
-
-		} else if ("30days".equals(window)) {
-
-			model.addAttribute("amsData", amsDataRepository
-				.findByDateAfter(LocalDate.now().minusDays(30), sortByDateAndCampaignName)
-				.map(AmsDataDTO::new));
-
-		} else if ("15days".equals(window)) {
-
-			model.addAttribute("amsData", amsDataRepository
-				.findByDateAfter(LocalDate.now().minusDays(15), sortByDateAndCampaignName)
-				.map(AmsDataDTO::new));
-		}
-
-		return Mono.just("rawAmsData");
-	}
-
-	@GetMapping("/conversions")
-	Mono<String> conversions(@RequestParam(name = "window", required = false) Optional<String> optionalWindow, Model model) {
-
-		String window = optionalWindow.orElse("all");
-
-		model.addAttribute("filterOptions", Arrays.asList(
-			new FilterOption("all", "Lifetime", window.equals("all")),
-			new FilterOption("90days", "Last 90 days", window.equals("90days")),
-			new FilterOption("30days", "Last 30 days", window.equals("30days")),
-			new FilterOption("15days", "Last 15 days", window.equals("15days"))
-		));
-
-		if ("all".equals(window)) {
-
-			model.addAttribute("conversionData",
-				adService.clicksToConvert(Optional.empty())
-					.sort(Comparator.comparing(BookDTO::getTitle)));
-
-		} else if ("90days".equals(window)) {
-
-			model.addAttribute("conversionData",
-				adService.clicksToConvert(Optional.of(LocalDate.now().minusDays(90)))
-					.sort(Comparator.comparing(BookDTO::getTitle)));
-
-		} else if ("30days".equals(window)) {
-
-			model.addAttribute("conversionData",
-				adService.clicksToConvert(Optional.of(LocalDate.now().minusDays(30)))
-					.sort(Comparator.comparing(BookDTO::getTitle)));
-
-		} else if ("15days".equals(window)) {
-
-			model.addAttribute("conversionData",
-				adService.clicksToConvert(Optional.of(LocalDate.now().minusDays(15)))
-					.sort(Comparator.comparing(BookDTO::getTitle)));
-		}
-
-		return Mono.just("conversions");
 	}
 
 	@GetMapping("/individualReport/{title}")
@@ -331,79 +179,13 @@ public class MagicSpreadsheetController {
 		return Mono.just("individualReport");
 	}
 
-	private static Flux<Tuple2<LocalDate, LocalDate>> rangeOfWindows(int window) {
-
-		return Flux.range(0, window)
-			.map(daysAgo -> Tuples.of(LocalDate.now().minusDays(window), LocalDate.now().minusDays(daysAgo)));
-	}
-
 	private Mono<EarningsService.TotalSales> roi(String title, LocalDate beginning, LocalDate end) {
+
 		return earningsService.totalCombinedRevenue(title, beginning, end)
 			.map(EarningsService.TotalSales::getTotal)
 			.flatMap(revenue -> adService.totalAdSpend(title, beginning, end)
 				.map(EarningsService.TotalSales::getTotal)
 				.map(adSpend -> new EarningsService.TotalSales(end, 100.0 * (revenue - adSpend) / adSpend)));
-	}
-
-	@GetMapping("/conversionsRaw")
-	@ResponseBody
-	Flux<BookDTO> conversionsRaw() {
-		
-		return adService.clicksToConvert(Optional.empty())
-			.sort(Comparator.comparing(BookDTO::getTitle));
-	}
-
-	@GetMapping("/books")
-	Mono<String> allBooks(Model model) {
-
-		model.addAttribute("books", bookRepository.findAll()
-			.sort(Comparator.comparing(Book::getTitle)));
-
-		return Mono.just("books");
-	}
-
-	@PostMapping("/setBookShort")
-	Mono<String> setBookShort(@ModelAttribute BookAndShort bookShort) {
-
-		return bookRepository.findByTitle(bookShort.getBookTitle())
-			.map(book -> {
-				book.setBookShort(bookShort.getBookShort());
-				book.setSeries(bookShort.getBookSeries());
-				book.setKENPC(bookShort.getKenpc());
-				return book;
-			})
-			.flatMap(bookRepository::save)
-			.then(Mono.just("redirect:/books"));
-	}
-
-	@Data
-	@NoArgsConstructor
-	static class BookAndShort {
-
-		String bookShort;
-		String bookTitle;
-		String bookSeries;
-		double kenpc;
-	}
-
-	@DeleteMapping("/books")
-	Mono<String> deleteBook(@ModelAttribute BookAndShort bookShort) {
-
-		return Mono.when(
-				bookRepository.deleteByTitle(bookShort.getBookTitle()),
-				wipeOutBookReferencesInAds(bookShort.getBookTitle()))
-			.then(Mono.just("redirect:/books"));
-	}
-
-	private Mono<Void> wipeOutBookReferencesInAds(String title) {
-
-		return adTableRepository.findByBookTitle(title)
-			.flatMap(adTableObject -> {
-				adTableObject.setBookTitle("");
-				adTableObject.setSeries("");
-				return adTableRepository.save(adTableObject);
-			})
-			.then();
 	}
 
 	@GetMapping("/unlinkedAds")
@@ -418,76 +200,13 @@ public class MagicSpreadsheetController {
 			.map(EbookRoyaltyDataDTO::new));
 
 		model.addAttribute("adTable", adService.unlinkedAds()
-			.flatMap(adTableObject -> bestGuess(adTableObject).zipWith(Mono.just(adTableObject)))
-			.map(objects -> new AdTableDTO(objects.getT2(), objects.getT1())));
+			.flatMap(adTableObject -> bestGuess(bookRepository.findAll(), adTableObject).zipWith(Mono.just(adTableObject)))
+			.map(objects -> new AdTableDTO(objects.getT2().updateAd(objects.getT1()), objects.getT1().getTitle())));
 
 		model.addAttribute("amsData", adService.unlinkedAmsData()
 			.map(AmsDataDTO::new));
 
 		return Mono.just("unlinkedAds");
-	}
-
-	@GetMapping("/createAllBooks")
-	Mono<String> createAllBooks() {
-
-		return adService.unlinkedRoyalties()
-			.map(Utils::royaltyToBook)
-			.sort(Comparator.comparing(Book::getTitle))
-			.distinct()
-			.flatMap(bookRepository::save)
-			.then(Mono.just("redirect:/unlinkedAds"));
-	}
-
-	@GetMapping("/createAllAds")
-	Mono<String> createAllAds() {
-
-		return adService.unlinkedAmsData()
-			.map(Utils::amsDataToAdData)
-			.sort(Comparator.comparing(AdTableObject::getCampaignName))
-			.distinct()
-			.flatMap(adTableRepository::save)
-			.then(Mono.just("redirect:/unlinkedAds"));
-	}
-
-	@GetMapping("/createAd")
-	Mono<String> createAd(@RequestParam("id") String id) {
-
-		return amsDataRepository.findById(id)
-			.map(Utils::amsDataToAdData)
-			.flatMap(adTableRepository::save)
-			.then(Mono.just("redirect:/unlinkedAds"));
-	}
-
-	@PostMapping("/createBooks")
-	Mono<String> createBooks(@ModelAttribute AdBookLink adLinkingParams) {
-
-		if (adLinkingParams.getBookTitle().contains("bestGuess")) {
-
-			return Flux.fromIterable(adLinkingParams.getAdIds())
-				.flatMap(id -> adTableRepository.findById(id)
-					.flatMapMany(ad -> bestGuess(ad)
-						.flatMapMany(bookTitle -> bookRepository.findByTitle(bookTitle).zipWith(Mono.just(ad)))))
-				.map(objects -> updateAd(objects.getT2(), objects.getT1()))
-				.flatMap(adTableRepository::save)
-				.then(Mono.just("redirect:/unlinkedAds"));
-		}
-
-		return bookRepository.findByTitle(adLinkingParams.getBookTitle())
-			.switchIfEmpty(bookRepository.save(new Book(
-				null,
-				-1,
-				-1,
-				adLinkingParams.getBookTitle(),
-				adLinkingParams.getAuthor(),
-				adLinkingParams.getBookShort(),
-				adLinkingParams.getSeries(),
-				adLinkingParams.getASIN(),
-				adLinkingParams.getKENPC()
-			)))
-			.flatMapMany(book -> Flux.fromIterable(adLinkingParams.getAdIds())
-				.flatMap(id -> adTableRepository.findById(id).zipWith(Mono.just(book))))
-			.flatMap(objects -> adTableRepository.save(updateAd(objects.getT1(), objects.getT2())))
-			.then(Mono.just("redirect:/unlinkedAds"));
 	}
 
 	@PostMapping("/upload")
@@ -499,37 +218,6 @@ public class MagicSpreadsheetController {
 			.then(Mono.just("redirect:/"));
 	}
 
-	@PostMapping("/import-ams")
-	Mono<String> importAmsReport(@RequestPart(name = "csvFile") Flux<FilePart> amsReport,
-								 @RequestPart(name = "date") String date) {
-
-		return amsReport
-			.sort(Comparator.comparing(FilePart::filename))
-			.flatMap(csvFilePart -> {
-				if (date.equals("")) {
-					return loaderService.importAmsReport(csvFilePart,
-						optionalDateInFilename(csvFilePart.filename()).orElse(LocalDate.now()));
-				} else {
-					try {
-						return loaderService.importAmsReport(csvFilePart, LocalDate.parse(date));
-					} catch (DateTimeParseException e) {
-						throw new RuntimeException(e);
-					}
-				}
-			})
-			.log("import-done")
-			.then(Mono.just("redirect:/"));
-	}
-
-	@PostMapping("/import-kdp-royalty")
-	Mono<String> importKdpRoyaltyReport(@RequestPart(name = "spreadsheet") Flux<FilePart> kdpReport) {
-
-		return kdpReport
-			.sort(Comparator.comparing(FilePart::filename))
-			.flatMap(loaderService::importKdpRoyaltyReport)
-			.then(Mono.just("redirect:/"));
-	}
-
 	@DeleteMapping("/delete-all")
 	Mono<String> deleteAll() {
 
@@ -537,46 +225,4 @@ public class MagicSpreadsheetController {
 			.then(Mono.just("redirect:/"));
 	}
 
-	private Optional<LocalDate> optionalDateInFilename(String filename) {
-
-
-		Pattern datePattern = Pattern.compile("\\d+-\\d+-\\d+");
-		Matcher matcher = datePattern.matcher(filename);
-
-		while (matcher.find()) {
-			try {
-				return Optional.of(LocalDate.parse(matcher.group()));
-			} catch (DateTimeParseException e) {
-				return Optional.empty();
-			}
-		}
-
-		return Optional.empty();
-	}
-
-	private AdTableObject updateAd(AdTableObject ad, Book book) {
-
-		ad.setBookTitle(book.getTitle());
-		ad.setSeries(book.getSeries());
-
-		return ad;
-	}
-
-	private Mono<String> bestGuess(AdTableObject ad) {
-
-		return bookRepository.findAll()
-			.filter(book -> referencesBook(ad, book))
-			.map(Book::getTitle)
-			.switchIfEmpty(Flux.just(""))
-			.next();
-
-	}
-
-	private static boolean referencesBook(AdTableObject ad, Book book) {
-		return containsSubstring(ad, book.getTitle()) || containsSubstring(ad, book.getBookShort());
-	}
-
-	private static boolean containsSubstring(AdTableObject ad, String title) {
-		return !StringUtils.isEmpty(title) && ad.getCampaignName().contains(title);
-	}
 }

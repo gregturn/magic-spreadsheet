@@ -28,11 +28,11 @@ interface EbookRoyaltyRepository extends ReactiveMongoRepository<EbookRoyaltyDat
 
 	Flux<EbookRoyaltyDataObject> findByRoyaltyDateAfter(LocalDate date, Sort sort);
 
-	Flux<EbookRoyaltyDataObject> findByTitle(String title);
+	Flux<EbookRoyaltyDataObject> findByTitleLike(String title);
 
 	Flux<EbookRoyaltyDataObject> findByTitleAndRoyaltyDate(String title, LocalDate royaltyDate);
 
-	Flux<EbookRoyaltyDataObject> findByTitleAndRoyaltyDateAfter(String title, LocalDate royaltyDate);
+	Flux<EbookRoyaltyDataObject> findByTitleLikeAndRoyaltyDateAfter(String title, LocalDate royaltyDate);
 
 	Flux<EbookRoyaltyDataObject> findByTitleAndRoyaltyDateBetween(String title, LocalDate earlier, LocalDate later);
 

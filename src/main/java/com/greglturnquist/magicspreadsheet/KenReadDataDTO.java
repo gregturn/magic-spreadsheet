@@ -15,39 +15,35 @@
  */
 package com.greglturnquist.magicspreadsheet;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.RequiredArgsConstructor;
 
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
+import java.time.LocalDate;
 
 /**
  * @author Greg Turnquist
  */
-@Data
-@AllArgsConstructor
-@Document
-class Book {
+@RequiredArgsConstructor
+class KenReadDataDTO {
 
-	@Id String id;
-	int rowNum;
-	long number;
-	String title;
-	String author;
-	String bookShort;
-	String series;
-	String ASIN;
-	double KENPC;
+	private final KenpReadDataObject object;
 
-	static final Book NONE = new Book(
-		"",
-		-1,
-		-1,
-		"",
-		"",
-		"",
-		"",
-		"",
-		0.1
-	);
+	public String getTitle() {
+		return this.object.getTitle();
+	}
+
+	public String getAuthor() {
+		return this.object.getAuthor();
+	}
+
+	public LocalDate getOrderDate() {
+		return this.object.getOrderDate();
+	}
+
+	public double getPagesRead() {
+		return this.object.getPagesRead();
+	}
+
+	public String getMarketPlace() {
+		return this.object.getMarketPlace();
+	}
 }
