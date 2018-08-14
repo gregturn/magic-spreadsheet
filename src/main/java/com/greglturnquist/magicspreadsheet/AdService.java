@@ -77,6 +77,7 @@ class AdService {
 			totalEarnings(book.getTitle(), date))
 
 			.map(objects -> new BookDTO(book.getTitle(), objects.getT1(), objects.getT2(), objects.getT3(), book.getKENPC(), objects.getT4(), objects.getT5()));
+//			.filter(bookDTO -> !bookDTO.getTotalAdSpend().equals("$0.0"));
 //			.filter(bookDTO -> bookDTO.getAdPerformanceStats().getImpressions() > 0.0);
 	}
 

@@ -194,7 +194,7 @@ class LoaderService {
 					return new EbookRoyaltyDataObject(
 						null,
 						row.getRowNum(),
-						LocalDate.parse(MagicSpreadsheetEbookRoyaltyDataColumn.RoyaltyDate.stringValue(row)),
+						MagicSpreadsheetEbookRoyaltyDataColumn.RoyaltyDate.dateValue(row),
 						MagicSpreadsheetEbookRoyaltyDataColumn.Title.stringValue(row),
 						MagicSpreadsheetEbookRoyaltyDataColumn.AuthorName.stringValue(row),
 						MagicSpreadsheetEbookRoyaltyDataColumn.ASIN.stringValue(row),
@@ -255,7 +255,7 @@ class LoaderService {
 					return new KenpReadDataObject(
 						null,
 						row.getRowNum(),
-						LocalDate.parse(MagicSpreadsheetKenpReadDataColumn.OrderDate.stringValue(row)),
+						MagicSpreadsheetKenpReadDataColumn.OrderDate.dateValue(row),
 						MagicSpreadsheetKenpReadDataColumn.Title.stringValue(row),
 						MagicSpreadsheetKenpReadDataColumn.AuthorName.stringValue(row),
 						MagicSpreadsheetKenpReadDataColumn.ASIN.stringValue(row),

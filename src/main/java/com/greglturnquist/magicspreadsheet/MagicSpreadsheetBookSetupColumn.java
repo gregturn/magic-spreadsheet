@@ -32,7 +32,8 @@ enum MagicSpreadsheetBookSetupColumn {
 	BookShort(3),
 	SeriesTitle(4),
 	AmazonASIN(5),
-	KENPC(6);
+	KENPC(6),
+	SeriesName(17);
 
 	private final int index;
 

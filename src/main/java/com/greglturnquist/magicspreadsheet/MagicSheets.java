@@ -45,6 +45,10 @@ enum MagicSheets {
 		this.sheetName = sheetName;
 	}
 
+	String getSheetName() {
+		return this.sheetName;
+	}
+
 	Sheet getSheet(Workbook workbook) {
 		return workbook.getSheet(this.sheetName);
 	}

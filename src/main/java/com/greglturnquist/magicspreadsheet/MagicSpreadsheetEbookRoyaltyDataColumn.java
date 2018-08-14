@@ -15,7 +15,7 @@
  */
 package com.greglturnquist.magicspreadsheet;
 
-import java.util.Date;
+import java.time.LocalDate;
 import java.util.Optional;
 
 import org.apache.poi.ss.usermodel.Cell;
@@ -65,11 +65,11 @@ enum MagicSpreadsheetEbookRoyaltyDataColumn {
 		return row.getCell(this.index).getStringCellValue();
 	}
 
-	public java.util.Date dateValue(Row row) {
-		return row.getCell(this.index).getDateCellValue();
+	public LocalDate dateValue(Row row) {
+		return Utils.dateValue(this.index, row);
 	}
 
-	public Optional<Date> optionalDateValue(Row row) {
+	public Optional<LocalDate> optionalDateValue(Row row) {
 		return this.cellType(row) == Cell.CELL_TYPE_NUMERIC ? Optional.of(this.dateValue(row)) : Optional.empty();
 	}
 

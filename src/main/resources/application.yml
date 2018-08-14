@@ -1,6 +1,7 @@
 logging:
   level:
     com.greglturnquist: TRACE
+#    reactor: TRACE
     reactor.core: TRACE
     reactor.util: TRACE
     org.springframework:

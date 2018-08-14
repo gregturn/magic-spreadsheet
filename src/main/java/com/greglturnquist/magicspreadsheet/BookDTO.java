@@ -77,6 +77,10 @@ class BookDTO {
 	}
 
 	public String getROI() {
-		return (this.totalEarnings - this.totalAdSpend) * 100.0 / this.totalAdSpend + "%";
+		return this.getROIRaw() + "%";
+	}
+
+	public double getROIRaw() {
+		return (this.totalEarnings - this.totalAdSpend) * 100.0 / this.totalAdSpend;
 	}
 }

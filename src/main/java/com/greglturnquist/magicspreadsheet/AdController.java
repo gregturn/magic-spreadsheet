@@ -26,6 +26,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -40,14 +41,17 @@ class AdController {
 	private final AmsDataRepository amsDataRepository;
 	private final AdTableRepository adTableRepository;
 	private final AdService adService;
+	private final BookRepository bookRepository;
 
 	AdController(AmsDataRepository amsDataRepository,
 				 AdTableRepository adTableRepository,
-				 AdService adService) {
+				 AdService adService,
+				 BookRepository bookRepository) {
 
 		this.amsDataRepository = amsDataRepository;
 		this.adTableRepository = adTableRepository;
 		this.adService = adService;
+		this.bookRepository = bookRepository;
 	}
 
 	@GetMapping("/ads")
@@ -74,25 +78,25 @@ class AdController {
 
 			model.addAttribute("conversionData",
 				adService.clicksToConvert(Optional.empty())
-					.sort(Comparator.comparing(BookDTO::getTitle)));
+					.sort((o1, o2) -> Double.compare(o2.getROIRaw(), o1.getROIRaw())));
 
 		} else if ("90days".equals(window)) {
 
 			model.addAttribute("conversionData",
 				adService.clicksToConvert(Optional.of(LocalDate.now().minusDays(90)))
-					.sort(Comparator.comparing(BookDTO::getTitle)));
+					.sort((o1, o2) -> Double.compare(o2.getROIRaw(), o1.getROIRaw())));
 
 		} else if ("30days".equals(window)) {
 
 			model.addAttribute("conversionData",
 				adService.clicksToConvert(Optional.of(LocalDate.now().minusDays(30)))
-					.sort(Comparator.comparing(BookDTO::getTitle)));
+					.sort((o1, o2) -> Double.compare(o2.getROIRaw(), o1.getROIRaw())));
 
 		} else if ("15days".equals(window)) {
 
 			model.addAttribute("conversionData",
 				adService.clicksToConvert(Optional.of(LocalDate.now().minusDays(15)))
-					.sort(Comparator.comparing(BookDTO::getTitle)));
+					.sort((o1, o2) -> Double.compare(o2.getROIRaw(), o1.getROIRaw())));
 		}
 
 		return Mono.just("conversions");
@@ -115,6 +119,13 @@ class AdController {
 			.distinct()
 			.flatMap(adTableRepository::save)
 			.then(Mono.just("redirect:/unlinkedAds"));
+	}
+
+	@DeleteMapping("/deleteAllAdData")
+	Mono<String> deleteAllAdData() {
+
+		return adTableRepository.deleteAll()
+			.thenReturn("redirect:/ads");
 	}
 
 	@GetMapping("/createAd")
