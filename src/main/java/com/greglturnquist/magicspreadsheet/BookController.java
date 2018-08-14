@@ -15,7 +15,7 @@
  */
 package com.greglturnquist.magicspreadsheet;
 
-import static com.greglturnquist.magicspreadsheet.Utils.bestGuess;
+import static com.greglturnquist.magicspreadsheet.Utils.*;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -102,7 +102,8 @@ class BookController {
 				null,
 				-1,
 				-1,
-				adLinkingParams.getBookTitle(),
+				mainTitle(adLinkingParams.getBookTitle()),
+				subTitle(adLinkingParams.getBookTitle()),
 				adLinkingParams.getAuthor(),
 				adLinkingParams.getBookShort(),
 				adLinkingParams.getSeries(),

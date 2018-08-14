@@ -28,6 +28,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -145,6 +146,20 @@ class RoyaltyController {
 			.sort(Comparator.comparing(FilePart::filename))
 			.flatMap(loaderService::importKdpRoyaltyReport)
 			.then(Mono.just("redirect:/"));
+	}
+
+	@DeleteMapping("/deleteAllRoyaltyData")
+	Mono<String> deleteAllRoyaltyData() {
+
+		return ebookRoyaltyRepository.deleteAll()
+			.thenReturn("redirect:/rawRoyaltyData");
+	}
+
+	@DeleteMapping("/deleteAllKenpData")
+	Mono<String> deleteAllKenpData() {
+
+		return kenpReadRepository.deleteAll()
+			.thenReturn("redirect:/rawRoyaltyData");
 	}
 
 }

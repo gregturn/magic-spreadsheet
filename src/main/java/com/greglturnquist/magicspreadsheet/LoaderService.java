@@ -17,9 +17,10 @@ package com.greglturnquist.magicspreadsheet;
 
 import static com.greglturnquist.magicspreadsheet.KdpRoyaltyReport.*;
 import static com.greglturnquist.magicspreadsheet.MagicSheets.*;
-import static com.greglturnquist.magicspreadsheet.Utils.not;
+import static com.greglturnquist.magicspreadsheet.Utils.*;
 import static org.springframework.data.mongodb.core.query.Criteria.*;
 import static org.springframework.data.mongodb.core.query.Query.*;
+import static reactor.bool.BooleanUtils.not;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -226,7 +227,8 @@ class LoaderService {
 						null,
 						row.getRowNum(),
 						new Double(MagicSpreadsheetBookSetupColumn.Counter.numericValue(row)).longValue(),
-						MagicSpreadsheetBookSetupColumn.BookTitle.stringValue(row),
+						mainTitle(MagicSpreadsheetBookSetupColumn.BookTitle.stringValue(row)),
+						subTitle(MagicSpreadsheetBookSetupColumn.BookTitle.stringValue(row)),
 						MagicSpreadsheetBookSetupColumn.AuthorName.stringValue(row),
 						MagicSpreadsheetBookSetupColumn.BookShort.stringValue(row),
 						MagicSpreadsheetBookSetupColumn.SeriesTitle.stringValue(row),

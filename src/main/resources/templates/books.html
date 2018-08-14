@@ -20,6 +20,7 @@
         <thead>
             <tr>
                 <th>Title</th>
+                <th>Subtitle</th>
                 <th>Author</th>
                 <th>Short</th>
                 <th>Series</th>
@@ -31,6 +32,7 @@
 
             <tr th:each="book : ${books}">
                 <td th:text="${book.title}" />
+                <td th:text="${book.subTitle}" />
                 <td th:text="${book.author}" />
                 <td th:text="${book.bookShort}" />
                 <td th:text="${book.series}" />

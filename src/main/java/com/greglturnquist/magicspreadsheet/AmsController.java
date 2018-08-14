@@ -31,6 +31,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -94,8 +95,6 @@ class AmsController {
 		return Mono.just("rawAmsData");
 	}
 
-
-
 	@PostMapping("/import-ams")
 	Mono<String> importAmsReport(@RequestPart(name = "csvFile") Flux<FilePart> amsReport,
 								 @RequestPart(name = "date") String date) {
@@ -116,6 +115,13 @@ class AmsController {
 			})
 			.log("import-done")
 			.then(Mono.just("redirect:/"));
+	}
+
+	@DeleteMapping("/deleteAllAmsData")
+	Mono<String> deleteAllAmsData() {
+
+		return amsDataRepository.deleteAll()
+			.thenReturn("redirect:/rawAmsData");
 	}
 
 	private Optional<LocalDate> optionalDateInFilename(String filename) {

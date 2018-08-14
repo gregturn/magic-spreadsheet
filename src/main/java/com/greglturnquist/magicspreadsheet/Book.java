@@ -33,6 +33,7 @@ class Book {
 	int rowNum;
 	long number;
 	String title;
+	String subTitle;
 	String author;
 	String bookShort;
 	String series;
@@ -43,6 +44,7 @@ class Book {
 		"",
 		-1,
 		-1,
+		"",
 		"",
 		"",
 		"",

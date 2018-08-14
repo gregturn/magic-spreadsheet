@@ -54,6 +54,7 @@ class Utils {
 			-1,
 			-1,
 			mainTitle(ebookRoyaltyDataObject.getTitle()),
+			subTitle(ebookRoyaltyDataObject.getTitle()),
 			ebookRoyaltyDataObject.getAuthorName(),
 			"",
 			"",
@@ -70,18 +71,16 @@ class Utils {
 			.switchIfEmpty(Mono.just(Book.NONE));
 	}
 
-	/**
-	 * Invert a {@link Boolean} condition, that is wrapped by a {@link Mono}.
-	 * 
-	 * @param condition
-	 * @return
-	 */
-	static Mono<Boolean> not(Mono<Boolean> condition) {
-		return condition
-			.map(aBoolean -> !aBoolean);
+	static String mainTitle(String longTitle) {
+		return longTitle.split(":")[0];
 	}
 
-	static String mainTitle(String title) {
-		return title.split(":")[0];
+	static String subTitle(String longTitle) {
+		
+		if (longTitle.contains(":")) {
+			return longTitle.split(":")[1].trim();
+		} else {
+			return "";
+		}
 	}
 }
