@@ -20,7 +20,7 @@ public class MagicSpreadsheetApplication {
 	@Bean
 	MongoClientSettingsBuilderCustomizer customizer() {
 		return clientSettingsBuilder -> clientSettingsBuilder.connectionPoolSettings(ConnectionPoolSettings.builder()
-			.maxWaitQueueSize(15000)
+			.maxWaitQueueSize(30000)
 			.build());
 	}
 

@@ -96,10 +96,10 @@ class AmsController {
 	}
 
 	@PostMapping("/import-ams")
-	Mono<String> importAmsReport(@RequestPart(name = "csvFile") Flux<FilePart> amsReport,
+	Mono<String> importAmsReport(@RequestPart(name = "csvFile") Flux<FilePart> amsReports,
 								 @RequestPart(name = "date") String date) {
 
-		return amsReport
+		return amsReports
 			.sort(Comparator.comparing(FilePart::filename))
 			.flatMap(csvFilePart -> {
 				if (date.equals("")) {
@@ -114,6 +114,8 @@ class AmsController {
 				}
 			})
 			.log("import-done")
+			.then(loaderService.normalizeAll())
+			.log("import-all")
 			.then(Mono.just("redirect:/"));
 	}
 
@@ -121,6 +123,22 @@ class AmsController {
 	Mono<String> deleteAllAmsData() {
 
 		return amsDataRepository.deleteAll()
+			.log("delete-all-amsData")
+			.thenReturn("redirect:/rawAmsData");
+	}
+
+	@PostMapping("/normalize")
+	Mono<String> normalizeAmsData() {
+
+//		return loaderService.findDuplicatelyNamedAds()
+//			.map(s -> {
+//				log.info("Duplicate ad " + s);
+//				return s;
+//			})
+//			.then(Mono.just("redirect:/rawAmsData"));
+//
+		return loaderService.normalizeAll()
+			.log("normalizeAll")
 			.thenReturn("redirect:/rawAmsData");
 	}
 

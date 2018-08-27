@@ -42,7 +42,24 @@ class AmsDataObject {
 	double budget;
 	double totalSpend;
 	Optional<Double> impressions;
+	Optional<Double> rawImpressions;
 	Optional<Double> clicks;
+	Optional<Double> rawClicks;
 	Optional<Double> averageCpc;
 	LocalDate date;
+	Optional<LocalDate> previousDate;
+	Optional<LocalDate> nextDate;
+
+	public Optional<Double> getRawClicks() {
+
+		if (this.rawClicks == null) {
+			return this.clicks;
+		} else {
+			return this.rawClicks;
+		}
+	}
+
+	public double getTotalSpend() {
+		return this.averageCpc.orElse(0.0) * this.clicks.orElse(0.0);
+	}
 }

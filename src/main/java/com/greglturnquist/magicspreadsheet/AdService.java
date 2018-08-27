@@ -15,7 +15,7 @@
  */
 package com.greglturnquist.magicspreadsheet;
 
-import static com.greglturnquist.magicspreadsheet.Utils.mainTitle;
+import static com.greglturnquist.magicspreadsheet.Utils.*;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -76,9 +76,14 @@ class AdService {
 			totalAdSpend(book.getTitle(), date),
 			totalEarnings(book.getTitle(), date))
 
-			.map(objects -> new BookDTO(book.getTitle(), objects.getT1(), objects.getT2(), objects.getT3(), book.getKENPC(), objects.getT4(), objects.getT5()));
-//			.filter(bookDTO -> !bookDTO.getTotalAdSpend().equals("$0.0"));
-//			.filter(bookDTO -> bookDTO.getAdPerformanceStats().getImpressions() > 0.0);
+			.map(objects -> new BookDTO(
+				book.getTitle(),
+				objects.getT1(),
+				objects.getT2(),
+				objects.getT3(),
+				book.getKENPC(),
+				objects.getT4(),
+				objects.getT5()));
 	}
 
 	private Mono<Double> unitsSold(String bookTitle, Optional<LocalDate> date) {

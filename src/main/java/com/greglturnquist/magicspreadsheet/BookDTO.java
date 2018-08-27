@@ -76,11 +76,20 @@ class BookDTO {
 		return "$" + this.totalEarnings;
 	}
 
-	public String getROI() {
-		return this.getROIRaw() + "%";
+	public double getRawROI() {
+		return (this.totalEarnings - this.totalAdSpend) / this.totalAdSpend;
 	}
 
-	public double getROIRaw() {
-		return (this.totalEarnings - this.totalAdSpend) * 100.0 / this.totalAdSpend;
+	public String getROI() {
+
+		if (this.totalAdSpend == 0.0) {
+			return "No ad spend (great)";
+		}
+
+		if (this.totalEarnings == 0.0) {
+			return "No sales (terrible)";
+		}
+		
+		return this.getRawROI() * 100.0 + "%";
 	}
 }

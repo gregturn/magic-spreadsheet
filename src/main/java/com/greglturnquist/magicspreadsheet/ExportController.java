@@ -15,7 +15,7 @@
  */
 package com.greglturnquist.magicspreadsheet;
 
-import static org.apache.poi.ss.usermodel.Row.CREATE_NULL_AS_BLANK;
+import static org.apache.poi.ss.usermodel.Row.*;
 import static reactor.function.TupleUtils.*;
 
 import lombok.extern.slf4j.Slf4j;
@@ -28,16 +28,15 @@ import java.sql.Date;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
-import java.util.Optional;
 import java.util.stream.IntStream;
 
-import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
+import reactor.util.function.Tuple2;
+import reactor.util.function.Tuples;
 import org.springframework.core.io.AbstractResource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
@@ -100,135 +99,89 @@ class ExportController {
 
 	private Mono<XSSFWorkbook> insertBooks(XSSFWorkbook workbook) {
 
-		return Mono.zip(
-				worksheet(workbook, MagicSheets.BOOKS_SETUP.getSheetName()),
-				bookRepository.findAll()
-					.sort(Comparator
-						.comparing(Book::getSeries)
-						.thenComparing(Book::getTitle))
-					.collectList())
-			.flatMap(function((worksheet, books) -> {
+		return worksheet(workbook, MagicSheets.BOOKS_SETUP.getSheetName())
+			.flatMapMany(worksheet -> bookRepository.findAll()
+				.sort(Comparator
+					.comparing(Book::getSeries)
+					.thenComparing(Book::getTitle))
+				.flatMap(book -> Mono.just(worksheet).zipWith(Mono.just(book))))
+			.index((index, objects) -> {
 
-				log.info("Ready to copy in the BOOK table...");
+				XSSFSheet worksheet = objects.getT1();
+				Book book = objects.getT2();
 
-				IntStream.range(0, books.size()).forEach(i -> {
+				Row row = worksheet.getRow(Math.toIntExact(index + 2));
+				int rownum = row.getRowNum() + 1;
 
-					Row row = worksheet.getRow(i + 2);
+				row.getCell(MagicSpreadsheetBookSetupColumn.BookTitle.index(), CREATE_NULL_AS_BLANK).setCellValue(book.getCompleteTitle());
+				row.getCell(MagicSpreadsheetBookSetupColumn.AuthorName.index(), CREATE_NULL_AS_BLANK).setCellValue(book.getAuthor());
+				row.getCell(MagicSpreadsheetBookSetupColumn.BookShort.index(), CREATE_NULL_AS_BLANK).setCellValue(book.getBookShort());
 
-					Optional.ofNullable(row.getCell(MagicSpreadsheetBookSetupColumn.BookTitle.index()))
-						.ifPresent(cell -> {
-							cell.setCellValue(books.get(i).getTitle());
-						});
+				if (book.getSubTitle().isEmpty()) {
+					row.getCell(MagicSpreadsheetBookSetupColumn.SeriesTitle.index(), CREATE_NULL_AS_BLANK).setCellValue((String) null);
+				} else {
+					row.getCell(MagicSpreadsheetBookSetupColumn.SeriesTitle.index(), CREATE_NULL_AS_BLANK).setCellValue(book.getSeries());
+				}
 
-					Optional.ofNullable(row.getCell(MagicSpreadsheetBookSetupColumn.AuthorName.index()))
-						.ifPresent(cell -> {
-							cell.setCellValue(books.get(i).getAuthor());
-						});
+				row.getCell(MagicSpreadsheetBookSetupColumn.AmazonASIN.index(), CREATE_NULL_AS_BLANK).setCellValue(book.getASIN());
+				row.getCell(MagicSpreadsheetBookSetupColumn.KENPC.index(), CREATE_NULL_AS_BLANK).setCellValue(book.getKENPC());
 
-					Optional.ofNullable(row.getCell(MagicSpreadsheetBookSetupColumn.BookShort.index()))
-						.ifPresent(cell -> {
-							cell.setCellValue(books.get(i).getBookShort());
-						});
+				return Tuples.of(book, worksheet);
+			})
+			.map(objects -> Tuples.of(objects.getT1().getSeries(), objects.getT2()))
+			.filter(objects -> StringUtils.hasText(objects.getT1()))
+			.sort(Comparator.comparing(Tuple2::getT1))
+			.distinct()
+			.index((index, objects) -> {
 
-					Optional.ofNullable(row.getCell(MagicSpreadsheetBookSetupColumn.SeriesTitle.index()))
-						.ifPresent(cell -> {
-							if (books.get(i).getSeries().isEmpty()) {
-								cell.setCellValue((String) null);
-							} else {
-								cell.setCellValue(books.get(i).getSeries());
-							}
-						});
+				String series = objects.getT1();
+				XSSFSheet worksheet = objects.getT2();
 
-					Optional.ofNullable(row.getCell(MagicSpreadsheetBookSetupColumn.AmazonASIN.index()))
-						.ifPresent(cell -> {
-							cell.setCellValue(books.get(i).getASIN());
-						});
+				Row row = worksheet.getRow(Math.toIntExact(index + 2));
 
-					Optional.ofNullable(row.getCell(MagicSpreadsheetBookSetupColumn.KENPC.index()))
-						.ifPresent(cell -> {
-							cell.setCellValue(books.get(i).getKENPC());
-						});
-				});
-
-				return Flux.fromIterable(books)
-					.map(Book::getSeries)
-					.filter(StringUtils::hasText)
-					.sort(String::compareTo)
-					.distinct()
-					.collectList()
-					.zipWith(Mono.just(worksheet));
-			}))
-			.flatMap(function((seriesList, worksheet) -> {
-
-				IntStream.range(0, seriesList.size()).forEach(i -> {
-
-					Row row = worksheet.getRow(i + 2);
-
-					Cell cell = row.getCell(MagicSpreadsheetBookSetupColumn.SeriesName.index(), CREATE_NULL_AS_BLANK);
-					cell.setCellValue(seriesList.get(i));
-				});
+				row.getCell(MagicSpreadsheetBookSetupColumn.SeriesName.index(), CREATE_NULL_AS_BLANK).setCellValue(series);
 
 				return Mono.just(workbook);
-			}));
+			})
+			.then(Mono.just(workbook));
 	}
 
 	private Mono<XSSFWorkbook> insertAds(XSSFWorkbook workbook) {
 
-		return Mono.zip(
-				worksheet(workbook, MagicSheets.AD_TABLE.getSheetName()),
-				adTableRepository.findAll()
+		return worksheet(workbook, MagicSheets.AD_TABLE.getSheetName())
+			.flatMapMany(worksheet -> adTableRepository.findAll()
 					.filter(adTableObject -> adTableObject.getBookTitle() != null)
 					.sort(Comparator
 						.comparing(AdTableObject::getStart)
 						.thenComparing(AdTableObject::getCampaignName))
-					.collectList())
-			.flatMap(function((worksheet, ads) -> {
+					.flatMap(adTableObject -> Mono.zip(
+						Mono.just(worksheet),
+						Mono.just(adTableObject),
+						bookRepository.findByTitle(adTableObject.getBookTitle()))))
+			.index((index, objects) -> {
 
-				log.info("Ready to copy in the ADS table...");
-				IntStream.range(0, ads.size()).forEach(i -> {
+				XSSFSheet worksheet = objects.getT1();
+				AdTableObject ad = objects.getT2();
+				Book book = objects.getT3();
 
-					Row row = worksheet.getRow(i + 1);
+				Row row = worksheet.getRow(Math.toIntExact(index + 1));
+				int rownum = row.getRowNum() + 1;
 
-					Optional.ofNullable(row.getCell(MagicSpreadsheetAdDataColumn.CampaignName.index()))
-						.ifPresent(cell -> {
-							cell.setCellValue(ads.get(i).getCampaignName());
-						});
+				row.getCell(MagicSpreadsheetAdDataColumn.CampaignName.index(), CREATE_NULL_AS_BLANK).setCellValue(ad.getCampaignName());
+				row.getCell(MagicSpreadsheetAdDataColumn.Type.index(), CREATE_NULL_AS_BLANK).setCellValue(ad.getType());
+				row.getCell(MagicSpreadsheetAdDataColumn.Start.index(), CREATE_NULL_AS_BLANK).setCellValue(Date.valueOf(ad.getStart()));
 
-					Optional.ofNullable(row.getCell(MagicSpreadsheetAdDataColumn.Type.index()))
-						.ifPresent(cell -> {
-							cell.setCellValue(ads.get(i).getType());
-						});
-
-					Optional.ofNullable(row.getCell(MagicSpreadsheetAdDataColumn.Start.index()))
-						.ifPresent(cell -> {
-							cell.setCellValue(Date.valueOf(ads.get(i).getStart()));
-						});
-
-					Optional.ofNullable(row.getCell(MagicSpreadsheetAdDataColumn.End.index()))
-						.ifPresent(cell -> {
-							ads.get(i).getEnd().ifPresent(endDate -> {
-								cell.setCellValue(Date.valueOf(endDate));
-							});
-						});
-
-					Optional.ofNullable(row.getCell(MagicSpreadsheetAdDataColumn.Budget.index()))
-						.ifPresent(cell -> {
-							cell.setCellValue(ads.get(i).getBudget());
-						});
-
-					Optional.ofNullable(row.getCell(MagicSpreadsheetAdDataColumn.BookTitle.index()))
-						.ifPresent(cell -> {
-							cell.setCellValue(ads.get(i).getBookTitle());
-						});
-
-					Optional.ofNullable(row.getCell(MagicSpreadsheetAdDataColumn.Series.index()))
-						.ifPresent(cell -> {
-							cell.setCellValue(ads.get(i).getSeries());
-						});
+				ad.getEnd().ifPresent(localDate -> {
+					row.getCell(MagicSpreadsheetAdDataColumn.End.index(), CREATE_NULL_AS_BLANK).setCellValue(Date.valueOf(localDate));
 				});
 
+				row.getCell(MagicSpreadsheetAdDataColumn.Budget.index(), CREATE_NULL_AS_BLANK).setCellValue(ad.getBudget());
+				row.getCell(MagicSpreadsheetAdDataColumn.BookTitle.index(), CREATE_NULL_AS_BLANK).setCellValue(book.getCompleteTitle());
+				row.getCell(MagicSpreadsheetAdDataColumn.Series.index(), CREATE_NULL_AS_BLANK).setCellValue(ad.getSeries());
+
 				return Mono.just(workbook);
-			}));
+			})
+			.then(Mono.just(workbook));
 	}
 
 	private Mono<Boolean> exists(AmsDataObject amsDataObject) {
@@ -250,85 +203,40 @@ class ExportController {
 					.thenComparing(AmsDataObject::getStartDate)
 					.thenComparing(AmsDataObject::getCampaignName))
 				.flatMap(amsDataObject -> Mono.just(worksheet).zipWith(Mono.just(amsDataObject))))
-				.index((index, objects) -> {
+			.index((index, objects) -> {
 
-					XSSFSheet worksheet = objects.getT1();
-					AmsDataObject amsDataObject = objects.getT2();
+				XSSFSheet worksheet = objects.getT1();
+				AmsDataObject amsDataObject = objects.getT2();
 
-					Row row = worksheet.getRow(Math.toIntExact(index) + 1);
-					int rownum = row.getRowNum() + 1;
+				Row row = worksheet.getRow(Math.toIntExact(index) + 1);
+				int rownum = row.getRowNum() + 1;
 
-					row.getCell(0, CREATE_NULL_AS_BLANK).setCellFormula("B" + rownum + "&T" + rownum);
-					row.getCell(1, CREATE_NULL_AS_BLANK).setCellFormula("VLOOKUP(H" + rownum + ",AdLookupTable,6,FALSE)");
-					row.getCell(2, CREATE_NULL_AS_BLANK).setCellFormula("VLOOKUP(B" + rownum + ",SeriesConvTable,4,FALSE)&E" + rownum);
-					row.getCell(3, CREATE_NULL_AS_BLANK).setCellFormula("H" + rownum + "&T" + rownum);
-					row.getCell(4, CREATE_NULL_AS_BLANK).setCellFormula("T" + rownum);
-					row.getCell(5, CREATE_NULL_AS_BLANK).setCellFormula("IF(N" + rownum + ">1000,1,0)");
+				row.getCell(0, CREATE_NULL_AS_BLANK).setCellFormula("B" + rownum + "&T" + rownum);
+				row.getCell(1, CREATE_NULL_AS_BLANK).setCellFormula("VLOOKUP(H" + rownum + ",AdLookupTable,6,FALSE)");
+				row.getCell(2, CREATE_NULL_AS_BLANK).setCellFormula("VLOOKUP(B" + rownum + ",SeriesConvTable,4,FALSE)&E" + rownum);
+				row.getCell(3, CREATE_NULL_AS_BLANK).setCellFormula("H" + rownum + "&T" + rownum);
+				row.getCell(4, CREATE_NULL_AS_BLANK).setCellFormula("T" + rownum);
+				row.getCell(5, CREATE_NULL_AS_BLANK).setCellFormula("IF(N" + rownum + ">1000,1,0)");
 
-					row.getCell(MagicSpreadsheetAmsDataColumn.Status.index(), CREATE_NULL_AS_BLANK).setCellValue(amsDataObject.getStatus());
-					row.getCell(MagicSpreadsheetAmsDataColumn.CampaignName.index(), CREATE_NULL_AS_BLANK).setCellValue(amsDataObject.getCampaignName());
-					row.getCell(MagicSpreadsheetAmsDataColumn.Type.index(), CREATE_NULL_AS_BLANK).setCellValue(amsDataObject.getType());
-					row.getCell(MagicSpreadsheetAmsDataColumn.StartDate.index(), CREATE_NULL_AS_BLANK).setCellValue(Date.valueOf(amsDataObject.getStartDate()));
+				row.getCell(MagicSpreadsheetAmsDataColumn.Status.index(), CREATE_NULL_AS_BLANK).setCellValue(amsDataObject.getStatus());
+				row.getCell(MagicSpreadsheetAmsDataColumn.CampaignName.index(), CREATE_NULL_AS_BLANK).setCellValue(amsDataObject.getCampaignName());
+				row.getCell(MagicSpreadsheetAmsDataColumn.Type.index(), CREATE_NULL_AS_BLANK).setCellValue(amsDataObject.getType());
+				row.getCell(MagicSpreadsheetAmsDataColumn.StartDate.index(), CREATE_NULL_AS_BLANK).setCellValue(Date.valueOf(amsDataObject.getStartDate()));
 
-					amsDataObject.getEndDate().ifPresent(localDate -> {
-						row.getCell(MagicSpreadsheetAmsDataColumn.EndDate.index(), CREATE_NULL_AS_BLANK).setCellValue(Date.valueOf(localDate));
-					});
+				amsDataObject.getEndDate().ifPresent(localDate -> {
+					row.getCell(MagicSpreadsheetAmsDataColumn.EndDate.index(), CREATE_NULL_AS_BLANK).setCellValue(Date.valueOf(localDate));
+				});
 
-					row.getCell(MagicSpreadsheetAmsDataColumn.Budget.index(), CREATE_NULL_AS_BLANK).setCellValue(amsDataObject.getBudget());
-					row.getCell(MagicSpreadsheetAmsDataColumn.Spend.index(), CREATE_NULL_AS_BLANK).setCellValue(amsDataObject.getTotalSpend());
-					row.getCell(MagicSpreadsheetAmsDataColumn.Impressions.index(), CREATE_NULL_AS_BLANK).setCellValue(amsDataObject.getImpressions().orElse(0.0));
-					row.getCell(MagicSpreadsheetAmsDataColumn.Clicks.index(), CREATE_NULL_AS_BLANK).setCellValue(amsDataObject.getClicks().orElse(0.0));
-					row.getCell(MagicSpreadsheetAmsDataColumn.AverageCpc.index(), CREATE_NULL_AS_BLANK).setCellValue(amsDataObject.getAverageCpc().orElse(0.0));
-					row.getCell(MagicSpreadsheetAmsDataColumn.Date.index(), CREATE_NULL_AS_BLANK).setCellValue(Date.valueOf(amsDataObject.getDate()));
+				row.getCell(MagicSpreadsheetAmsDataColumn.Budget.index(), CREATE_NULL_AS_BLANK).setCellValue(amsDataObject.getBudget());
+				row.getCell(MagicSpreadsheetAmsDataColumn.Spend.index(), CREATE_NULL_AS_BLANK).setCellValue(amsDataObject.getTotalSpend());
+				row.getCell(MagicSpreadsheetAmsDataColumn.Impressions.index(), CREATE_NULL_AS_BLANK).setCellValue(amsDataObject.getImpressions().orElse(0.0));
+				row.getCell(MagicSpreadsheetAmsDataColumn.Clicks.index(), CREATE_NULL_AS_BLANK).setCellValue(amsDataObject.getClicks().orElse(0.0));
+				row.getCell(MagicSpreadsheetAmsDataColumn.AverageCpc.index(), CREATE_NULL_AS_BLANK).setCellValue(amsDataObject.getAverageCpc().orElse(0.0));
+				row.getCell(MagicSpreadsheetAmsDataColumn.Date.index(), CREATE_NULL_AS_BLANK).setCellValue(Date.valueOf(amsDataObject.getDate()));
 
-					return Mono.just(workbook);
-				})
-				.then(Mono.just(workbook));
-
-//		return Mono.zip(
-//			worksheet(workbook, MagicSheets.AMS_DATA.getSheetName()),
-//			amsDataRepository.findAll()
-//				.filterWhen(this::exists)
-//				.sort(Comparator
-//					.comparing(AmsDataObject::getDate)
-//					.thenComparing(AmsDataObject::getStartDate)
-//					.thenComparing(AmsDataObject::getCampaignName))
-//				.collectList())
-//			.flatMap(function((worksheet, amsDataObjects) -> {
-//
-//				log.info("Ready to copy in the AMS Data table...");
-//
-//				IntStream.range(1, amsDataObjects.size()).forEach(i -> {
-//
-//					Row row = worksheet.getRow(i);
-//					int rownum = row.getRowNum() + 1;
-//
-//					row.getCell(0, CREATE_NULL_AS_BLANK).setCellFormula("B" + rownum + "&T" + rownum);
-//					row.getCell(1, CREATE_NULL_AS_BLANK).setCellFormula("VLOOKUP(H" + rownum + ",AdLookupTable,6,FALSE)");
-//					row.getCell(2, CREATE_NULL_AS_BLANK).setCellFormula("VLOOKUP(B" + rownum + ",SeriesConvTable,4,FALSE)&E" + rownum);
-//					row.getCell(3, CREATE_NULL_AS_BLANK).setCellFormula("H" + rownum + "&T" + rownum);
-//					row.getCell(4, CREATE_NULL_AS_BLANK).setCellFormula("T" + rownum);
-//					row.getCell(5, CREATE_NULL_AS_BLANK).setCellFormula("IF(N" + rownum + ">1000,1,0)");
-//
-//					row.getCell(MagicSpreadsheetAmsDataColumn.Status.index(), CREATE_NULL_AS_BLANK).setCellValue(amsDataObjects.get(i).getStatus());
-//					row.getCell(MagicSpreadsheetAmsDataColumn.CampaignName.index(), CREATE_NULL_AS_BLANK).setCellValue(amsDataObjects.get(i).getCampaignName());
-//					row.getCell(MagicSpreadsheetAmsDataColumn.Type.index(), CREATE_NULL_AS_BLANK).setCellValue(amsDataObjects.get(i).getType());
-//					row.getCell(MagicSpreadsheetAmsDataColumn.StartDate.index(), CREATE_NULL_AS_BLANK).setCellValue(Date.valueOf(amsDataObjects.get(i).getStartDate()));
-//
-//					amsDataObjects.get(i).getEndDate().ifPresent(localDate -> {
-//						row.getCell(MagicSpreadsheetAmsDataColumn.EndDate.index(), CREATE_NULL_AS_BLANK).setCellValue(Date.valueOf(localDate));
-//					});
-//
-//					row.getCell(MagicSpreadsheetAmsDataColumn.Budget.index(), CREATE_NULL_AS_BLANK).setCellValue(amsDataObjects.get(i).getBudget());
-//					row.getCell(MagicSpreadsheetAmsDataColumn.Spend.index(), CREATE_NULL_AS_BLANK).setCellValue(amsDataObjects.get(i).getTotalSpend());
-//					row.getCell(MagicSpreadsheetAmsDataColumn.Impressions.index(), CREATE_NULL_AS_BLANK).setCellValue(amsDataObjects.get(i).getImpressions().orElse(0.0));
-//					row.getCell(MagicSpreadsheetAmsDataColumn.Clicks.index(), CREATE_NULL_AS_BLANK).setCellValue(amsDataObjects.get(i).getClicks().orElse(0.0));
-//					row.getCell(MagicSpreadsheetAmsDataColumn.AverageCpc.index(), CREATE_NULL_AS_BLANK).setCellValue(amsDataObjects.get(i).getAverageCpc().orElse(0.0));
-//					row.getCell(MagicSpreadsheetAmsDataColumn.Date.index(), CREATE_NULL_AS_BLANK).setCellValue(Date.valueOf(amsDataObjects.get(i).getDate()));
-//				});
-//
-//				return Mono.just(workbook);
-//			}));
+				return Mono.just(workbook);
+			})
+			.then(Mono.just(workbook));
 	}
 
 	private Mono<XSSFWorkbook> insertRoyaltyData(XSSFWorkbook workbook) {
@@ -348,55 +256,18 @@ class ExportController {
 
 					Row row = worksheet.getRow(i + 1);
 
-					Optional.ofNullable(row.getCell(MagicSpreadsheetEbookRoyaltyDataColumn.RoyaltyDate.index()))
-						.ifPresent(cell -> {
-							cell.setCellValue(royaltyDataObjects.get(i).getRoyaltyDate().format(FORMATTER));
-						});
+					EbookRoyaltyDataObject royaltyDataObject = royaltyDataObjects.get(i);
 
-					Optional.ofNullable(row.getCell(MagicSpreadsheetEbookRoyaltyDataColumn.Title.index()))
-						.ifPresent(cell -> {
-							cell.setCellValue(royaltyDataObjects.get(i).getTitle());
-						});
-
-					Optional.ofNullable(row.getCell(MagicSpreadsheetEbookRoyaltyDataColumn.AuthorName.index()))
-						.ifPresent(cell -> {
-							cell.setCellValue(royaltyDataObjects.get(i).getAuthorName());
-						});
-
-					Optional.ofNullable(row.getCell(MagicSpreadsheetEbookRoyaltyDataColumn.ASIN.index()))
-						.ifPresent(cell -> {
-							cell.setCellValue(royaltyDataObjects.get(i).getASIN());
-						});
-
-					Optional.ofNullable(row.getCell(MagicSpreadsheetEbookRoyaltyDataColumn.Marketplace.index()))
-						.ifPresent(cell -> {
-							cell.setCellValue(royaltyDataObjects.get(i).getMarketplace());
-						});
-
-					Optional.ofNullable(row.getCell(MagicSpreadsheetEbookRoyaltyDataColumn.RoyaltyType.index()))
-						.ifPresent(cell -> {
-							cell.setCellValue(royaltyDataObjects.get(i).getRoyaltyType());
-						});
-
-					Optional.ofNullable(row.getCell(MagicSpreadsheetEbookRoyaltyDataColumn.TransationType.index()))
-						.ifPresent(cell -> {
-							cell.setCellValue(royaltyDataObjects.get(i).getTransactionType());
-						});
-
-					Optional.ofNullable(row.getCell(MagicSpreadsheetEbookRoyaltyDataColumn.NetUnitsSold.index()))
-						.ifPresent(cell -> {
-							cell.setCellValue(royaltyDataObjects.get(i).getNetUnitsSold());
-						});
-
-					Optional.ofNullable(row.getCell(MagicSpreadsheetEbookRoyaltyDataColumn.Royalty.index()))
-						.ifPresent(cell -> {
-							cell.setCellValue(royaltyDataObjects.get(i).getRoyalty());
-						});
-
-					Optional.ofNullable(row.getCell(MagicSpreadsheetEbookRoyaltyDataColumn.Currency.index()))
-						.ifPresent(cell -> {
-							cell.setCellValue(royaltyDataObjects.get(i).getCurrency());
-						});
+					row.getCell(MagicSpreadsheetEbookRoyaltyDataColumn.RoyaltyDate.index(), CREATE_NULL_AS_BLANK).setCellValue(royaltyDataObject.getRoyaltyDate().format(FORMATTER));
+					row.getCell(MagicSpreadsheetEbookRoyaltyDataColumn.Title.index(), CREATE_NULL_AS_BLANK).setCellValue(royaltyDataObject.getTitle());
+					row.getCell(MagicSpreadsheetEbookRoyaltyDataColumn.AuthorName.index(), CREATE_NULL_AS_BLANK).setCellValue(royaltyDataObject.getAuthorName());
+					row.getCell(MagicSpreadsheetEbookRoyaltyDataColumn.ASIN.index(), CREATE_NULL_AS_BLANK).setCellValue(royaltyDataObject.getASIN());
+					row.getCell(MagicSpreadsheetEbookRoyaltyDataColumn.Marketplace.index(), CREATE_NULL_AS_BLANK).setCellValue(royaltyDataObject.getMarketplace());
+					row.getCell(MagicSpreadsheetEbookRoyaltyDataColumn.RoyaltyType.index(), CREATE_NULL_AS_BLANK).setCellValue(royaltyDataObject.getRoyaltyType());
+					row.getCell(MagicSpreadsheetEbookRoyaltyDataColumn.TransationType.index(), CREATE_NULL_AS_BLANK).setCellValue(royaltyDataObject.getTransactionType());
+					row.getCell(MagicSpreadsheetEbookRoyaltyDataColumn.NetUnitsSold.index(), CREATE_NULL_AS_BLANK).setCellValue(royaltyDataObject.getNetUnitsSold());
+					row.getCell(MagicSpreadsheetEbookRoyaltyDataColumn.Royalty.index(), CREATE_NULL_AS_BLANK).setCellValue(royaltyDataObject.getRoyalty());
+					row.getCell(MagicSpreadsheetEbookRoyaltyDataColumn.Currency.index(), CREATE_NULL_AS_BLANK).setCellValue(royaltyDataObject.getCurrency());
 
 				});
 
@@ -422,35 +293,14 @@ class ExportController {
 
 					Row row = worksheet.getRow(i + 1);
 
-					Optional.ofNullable(row.getCell(MagicSpreadsheetKenpReadDataColumn.OrderDate.index()))
-						.ifPresent(cell -> {
-							cell.setCellValue(readDataObjects.get(i).getOrderDate().format(FORMATTER));
-						});
+					KenpReadDataObject kenpReadDataObject = readDataObjects.get(i);
 
-					Optional.ofNullable(row.getCell(MagicSpreadsheetKenpReadDataColumn.Title.index()))
-						.ifPresent(cell -> {
-							cell.setCellValue(readDataObjects.get(i).getTitle());
-						});
-
-					Optional.ofNullable(row.getCell(MagicSpreadsheetKenpReadDataColumn.AuthorName.index()))
-						.ifPresent(cell -> {
-							cell.setCellValue(readDataObjects.get(i).getAuthor());
-						});
-
-					Optional.ofNullable(row.getCell(MagicSpreadsheetKenpReadDataColumn.ASIN.index()))
-						.ifPresent(cell -> {
-							cell.setCellValue(readDataObjects.get(i).getASIN());
-						});
-
-					Optional.ofNullable(row.getCell(MagicSpreadsheetKenpReadDataColumn.Marketplace.index()))
-						.ifPresent(cell -> {
-							cell.setCellValue(readDataObjects.get(i).getMarketPlace());
-						});
-
-					Optional.ofNullable(row.getCell(MagicSpreadsheetKenpReadDataColumn.PagesRead.index()))
-						.ifPresent(cell -> {
-							cell.setCellValue(readDataObjects.get(i).getPagesRead());
-						});
+					row.getCell(MagicSpreadsheetKenpReadDataColumn.OrderDate.index(), CREATE_NULL_AS_BLANK).setCellValue(kenpReadDataObject.getOrderDate().format(FORMATTER));
+					row.getCell(MagicSpreadsheetKenpReadDataColumn.Title.index(), CREATE_NULL_AS_BLANK).setCellValue(kenpReadDataObject.getTitle());
+					row.getCell(MagicSpreadsheetKenpReadDataColumn.AuthorName.index(), CREATE_NULL_AS_BLANK).setCellValue(kenpReadDataObject.getAuthor());
+					row.getCell(MagicSpreadsheetKenpReadDataColumn.ASIN.index(), CREATE_NULL_AS_BLANK).setCellValue(kenpReadDataObject.getASIN());
+					row.getCell(MagicSpreadsheetKenpReadDataColumn.Marketplace.index(), CREATE_NULL_AS_BLANK).setCellValue(kenpReadDataObject.getMarketPlace());
+					row.getCell(MagicSpreadsheetKenpReadDataColumn.PagesRead.index(), CREATE_NULL_AS_BLANK).setCellValue(kenpReadDataObject.getPagesRead());
 				});
 
 				return Mono.just(workbook);

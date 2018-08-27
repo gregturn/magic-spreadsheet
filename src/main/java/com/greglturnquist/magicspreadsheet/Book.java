@@ -52,4 +52,13 @@ class Book {
 		"",
 		0.1
 	);
+
+	String getCompleteTitle() {
+
+		if (this.subTitle.isEmpty()) {
+			return this.title;
+		}
+
+		return this.title + ": " + this.subTitle;
+	}
 }

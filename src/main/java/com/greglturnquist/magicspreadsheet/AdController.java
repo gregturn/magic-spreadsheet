@@ -28,6 +28,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
@@ -78,28 +79,43 @@ class AdController {
 
 			model.addAttribute("conversionData",
 				adService.clicksToConvert(Optional.empty())
-					.sort((o1, o2) -> Double.compare(o2.getROIRaw(), o1.getROIRaw())));
+					.sort((o1, o2) -> Double.compare(o2.getRawROI(), o1.getRawROI())));
 
 		} else if ("90days".equals(window)) {
 
 			model.addAttribute("conversionData",
 				adService.clicksToConvert(Optional.of(LocalDate.now().minusDays(90)))
-					.sort((o1, o2) -> Double.compare(o2.getROIRaw(), o1.getROIRaw())));
+					.sort((o1, o2) -> Double.compare(o2.getRawROI(), o1.getRawROI())));
 
 		} else if ("30days".equals(window)) {
 
 			model.addAttribute("conversionData",
 				adService.clicksToConvert(Optional.of(LocalDate.now().minusDays(30)))
-					.sort((o1, o2) -> Double.compare(o2.getROIRaw(), o1.getROIRaw())));
+					.sort((o1, o2) -> Double.compare(o2.getRawROI(), o1.getRawROI())));
 
 		} else if ("15days".equals(window)) {
 
 			model.addAttribute("conversionData",
 				adService.clicksToConvert(Optional.of(LocalDate.now().minusDays(15)))
-					.sort((o1, o2) -> Double.compare(o2.getROIRaw(), o1.getROIRaw())));
+					.sort((o1, o2) -> Double.compare(o2.getRawROI(), o1.getRawROI())));
 		}
 
 		return Mono.just("conversions");
+	}
+
+	@GetMapping("/adChart/{title}")
+	Mono<String> adPerformance(@PathVariable String title, Model model) {
+
+		model.addAttribute("stats", adTableRepository.findByBookTitle(title)
+			.map(AdTableObject::getCampaignName)
+			.flatMap(amsDataRepository::findByCampaignName)
+			.sort(Comparator.comparing(AmsDataObject::getDate))
+			.filter(amsDataObject -> amsDataObject.getClicks().orElse(0.0) > 0.0)
+			.filter(amsDataObject -> amsDataObject.getImpressions().orElse(0.0) > 0.0)
+			.filter(amsDataObject -> amsDataObject.getDate().isAfter(LocalDate.parse("2018-05-27")))
+			.map(AmsDataDTO::new));
+
+		return Mono.just("adChart");
 	}
 
 	@GetMapping("/conversionsRaw")
@@ -136,5 +152,4 @@ class AdController {
 			.flatMap(adTableRepository::save)
 			.then(Mono.just("redirect:/unlinkedAds"));
 	}
-
 }

@@ -34,13 +34,27 @@
         <form th:action="@{/deleteAllAmsData}" th:method="delete">
             <button type="submit">DELETE ALL AMS DATA</button>
         </form>
+        <form th:action="@{/normalize}" th:method="post">
+            <button type="submit">Re-normalize AMS data</button>
+        </form>
     </div>
     
     <div>
         <table>
             <thead>
             <tr>
-                <th></th><th>Status</th><th>Campaign</th><th>Impressions</th><th>Clicks</th><th>Avg. CPC</th><th>Total Spent</th><th>Date</th>
+                <th></th>
+                <th>Status</th>
+                <th>Campaign</th>
+                <th>Impressions</th>
+                <th>Raw Impressions</th>
+                <th>Clicks</th>
+                <th>Raw Clicks</th>
+                <th>Avg. CPC</th>
+                <th>Total Spent</th>
+                <th>Date</th>
+                <th>Previous Date</th>
+                <th>Next Date</th>
             </tr>
             </thead>
             <tbody>
@@ -49,10 +63,14 @@
                 <td th:text="${data.status}" />
                 <td th:text="${data.campaignName}" />
                 <td th:text="${data.impressions}" />
+                <td th:text="${data.rawImpressions}" />
                 <td th:text="${data.clicks}" />
+                <td th:text="${data.rawClicks}" />
                 <td th:text="${data.averageCpc}" />
                 <td th:text="${data.totalSpend}" />
                 <td th:text="${data.date}" />
+                <td th:text="${data.previousDate}" />
+                <td th:text="${data.nextDate}" />
             </tr>
             </tbody>
         </table>

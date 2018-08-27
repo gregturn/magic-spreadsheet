@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Magic Spreadsheet  - Ad Chart</title>
+    <link rel="stylesheet" href="/main.css" />
+    <script src="https://d3js.org/d3.v4.js" charset="utf-8"></script>
+    <style>
+        .bar-chart {
+            background-color: #C7D9D9;
+        }
+
+        .line-chart {
+            border: 1px solid lightgray;
+        }
+
+        .label-text {
+            font-size: 10px
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Magic Spreadsheet - Spring Boot style</h1>
+
+    <div>
+        <a th:href="@{/books}">All Books</a>
+    </div>
+
+    <div>
+        <svg class="chart"></svg>
+    </div>
+
+    <script th:inline="javascript">
+		/*<![CDATA[*/
+
+		var dataset = /*[[${stats}]]*/ [];
+
+		var nested = d3.nest()
+			.key(function(d) { return d.date; })
+			.rollup(function(v) {
+				return {
+					clicks: d3.sum(v, function(d) { return d.clicks; }),
+					impressions: d3.sum(v, function(d) { return d.impressions; })
+				}
+			})
+			.entries(dataset);
+
+		var nested2 = d3.nest()
+            .key(function(d) { return d.campaignName; })
+            .entries(dataset);
+
+		var max = {
+			minClicks: d3.min(dataset, function(d) { return parseFloat(d.clicks); }),
+			maxClicks: d3.max(dataset, function(d) { return parseFloat(d.clicks); }),
+            minImpressions: d3.min(dataset, function(d) { return parseFloat(d.impressions); }),
+			maxImpressions: d3.max(dataset, function(d) { return parseFloat(d.impressions); })
+        };
+        
+		console.log(max);
+
+		var svgWidth = 1000;
+		var svgHeight = 500;
+
+		var margin = { top: 20, right: 20, bottom: 30, left: 50 };
+		
+		var width = svgWidth - margin.left - margin.right;
+		var height = svgHeight - margin.top - margin.bottom;
+
+
+		var svg = d3.select('.chart')
+			.attr("width", svgWidth)
+			.attr("height", svgHeight)
+			.attr("class", "bar-chart");
+
+		var g = svg.append("g")
+			.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+		var x = d3.scaleTime().rangeRound([0, width]);
+		var y = d3.scaleLinear().rangeRound([height, 0]);
+		var y2 = d3.scaleLinear().rangeRound([height, 0]);
+        
+		x.domain(d3.extent(nested, function(d) { return new Date(d.key); }));
+		y.domain([max.minImpressions, max.maxImpressions]);
+		y2.domain([-max.minClicks, max.maxClicks]);
+
+        g.append("g")
+            .attr("transform", "translate(0," + height + ")")
+            .call(d3.axisBottom(x));
+
+		g.append("g")
+			.call(d3.axisLeft(y))
+			.append("text")
+			.attr("fill", "#000")
+			.attr("transform", "rotate(-90)")
+			.attr("y", 6)
+			.attr("dy", "0.71em")
+			.attr("text-anchor", "end")
+			.text("Impressions");
+
+		g.append("g")
+			.attr("transform", "translate( " + width + ", 0 )")
+			.call(d3.axisRight(y2))
+			.append("text")
+			.attr("fill", "#f00")
+			.attr("transform", "rotate(-90)")
+			.attr("y", 6)
+			.attr("dy", "0.71em")
+			.attr("text-anchor", "end")
+			.text("Clicks");
+
+        var color = d3.scaleOrdinal(d3.schemeCategory10);
+
+        var i=0;
+
+		nested2.forEach(function(entry) {
+			console.log(entry);
+
+			var thisLine = d3.line()
+				.x(function(d) { return x(new Date(d.date)); })
+				.y(function(d) { return y(d.impressions); });
+
+			g.append("path")
+				.datum(entry.values)
+                .attr("id", entry.key)
+				.attr("fill", "none")
+				.attr("stroke", color(i))
+				.attr("stroke-linejoin", "round")
+				.attr("stroke-linecap", "round")
+				.attr("stroke-width", 1.5)
+				.attr("d", thisLine);
+
+			svg.append("text")
+				.attr("transform", "translate("+50+","+10+")")
+                .style("font-size", "14px")
+                .style("fill", color(i))
+                .append("textPath")
+                .attr("xlink:href", '#' + entry.key)
+                .text(entry.key);
+
+			// svg.append("text")
+			// 	.attr("transform", "translate("+(entry.values.length*50)+","+y(entry.values[entry.values.length-1].impressions)+")")
+			// 	.attr("dy", ".35em")
+			// 	.attr("text-anchor", "end")
+			// 	.style("fill", color(i))
+             //    .attr("class", "label-text")
+			// 	.text(entry.key);
+
+			i += 1;
+		});
+
+		/*]]>*/
+    </script>
+
+</body>
+</html>

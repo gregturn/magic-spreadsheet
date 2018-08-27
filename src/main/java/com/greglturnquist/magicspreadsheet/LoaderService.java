@@ -20,7 +20,7 @@ import static com.greglturnquist.magicspreadsheet.MagicSheets.*;
 import static com.greglturnquist.magicspreadsheet.Utils.*;
 import static org.springframework.data.mongodb.core.query.Criteria.*;
 import static org.springframework.data.mongodb.core.query.Query.*;
-import static reactor.bool.BooleanUtils.not;
+import static reactor.bool.BooleanUtils.*;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -141,10 +141,14 @@ class LoaderService {
 						MagicSpreadsheetAmsDataColumn.EndDate.optionalDateValue(row),
 						MagicSpreadsheetAmsDataColumn.Budget.numericValue(row),
 						MagicSpreadsheetAmsDataColumn.Spend.numericValue(row),
+						Optional.empty(),
 						MagicSpreadsheetAmsDataColumn.Impressions.optionalNumericValue(row),
+						Optional.empty(),
 						MagicSpreadsheetAmsDataColumn.Clicks.optionalNumericValue(row),
 						MagicSpreadsheetAmsDataColumn.AverageCpc.optionalNumericValue(row),
-						MagicSpreadsheetAmsDataColumn.Date.dateValue(row));
+						MagicSpreadsheetAmsDataColumn.Date.dateValue(row),
+						Optional.empty(),
+						Optional.empty());
 				} catch (IllegalStateException|NullPointerException e) {
 					log.error("Failed to parse " + AMS_DATA.name() + ": rowNum=" + row.getRowNum() + " " + e.getMessage());
 					return null;
@@ -385,10 +389,14 @@ class LoaderService {
 							toOptionalDate(csvRecord.get("End Date")),
 							toDouble(csvRecord.get("Budget")),
 							toDouble(csvRecord.get("Spend")),
+							Optional.empty(),
 							toOptionalDouble(csvRecord.get("Impressions")),
+							Optional.empty(),
 							toOptionalDouble(csvRecord.get("Clicks")),
 							toOptionalDouble(csvRecord.get("Average CPC")),
-							date));
+							date,
+							Optional.empty(),
+							Optional.empty()));
 					} catch (DateTimeParseException e) {
 						log.error("Unable to parse #" + csvRecord.getRecordNumber() + " " + csvRecord.toString() + " => " + e.getMessage());
 						return Mono.empty();
@@ -398,31 +406,34 @@ class LoaderService {
 				.filterWhen(amsDataObject -> not(amsDataRepository.existsByCampaignNameAndDate(amsDataObject.getCampaignName(), amsDataObject.getDate())))
 				.filterWhen(amsDataObject -> not(amsDataRepository.existsByCampaignNameAndDateAfter(amsDataObject.getCampaignName(), amsDataObject.getDate())))
 				.log("importAms-filterOutAlreadyLoadedData")
-				.flatMap(amsDataObject -> Mono.zip(
-					totalImpressions(amsDataObject.getCampaignName()),
-					totalClicks(amsDataObject.getCampaignName()),
-					Mono.just(amsDataObject)))
-				.log("importAms-create-newAmsRecord")
-				.map(tuple3 -> {
-					log.info("Total impressions for " + tuple3.getT3().getCampaignName() + " so far => " + tuple3.getT1());
-					log.info("Total clicks for " + tuple3.getT3().getCampaignName() + " so far => " + tuple3.getT2());
-					log.info("New for " + tuple3.getT3().getCampaignName() + " => " + tuple3.getT3().toString());
-					return new AmsDataObject(
-						null,
-						-1,
-						tuple3.getT3().getStatus(),
-						tuple3.getT3().getCampaignName(),
-						tuple3.getT3().getType(),
-						tuple3.getT3().getStartDate(),
-						tuple3.getT3().getEndDate(),
-						tuple3.getT3().getBudget(),
-						tuple3.getT3().getTotalSpend(),
-						Optional.of(tuple3.getT3().getImpressions().orElse(0.0) - tuple3.getT1()),
-						Optional.of(tuple3.getT3().getClicks().orElse(0.0) - tuple3.getT2()),
-						tuple3.getT3().getAverageCpc(),
-						date);
-				})
-				.log("importAms-logitall")
+//				.flatMap(amsDataObject -> Mono.zip(
+//					totalImpressions(amsDataObject.getCampaignName()),
+//					totalClicks(amsDataObject.getCampaignName()),
+//					Mono.just(amsDataObject)))
+//				.log("importAms-create-newAmsRecord")
+//				.map(tuple3 -> {
+//					log.info("Total impressions for " + tuple3.getT3().getCampaignName() + " so far => " + tuple3.getT1());
+//					log.info("Total clicks for " + tuple3.getT3().getCampaignName() + " so far => " + tuple3.getT2());
+//					log.info("New for " + tuple3.getT3().getCampaignName() + " => " + tuple3.getT3().toString());
+//					return new AmsDataObject(
+//						null,
+//						-1,
+//						tuple3.getT3().getStatus(),
+//						tuple3.getT3().getCampaignName(),
+//						tuple3.getT3().getType(),
+//						tuple3.getT3().getStartDate(),
+//						tuple3.getT3().getEndDate(),
+//						tuple3.getT3().getBudget(),
+//						tuple3.getT3().getTotalSpend(),
+//						Optional.of(tuple3.getT3().getImpressions().orElse(0.0) - tuple3.getT1()),
+//						tuple3.getT3().getRawImpressions(),
+//						Optional.of(tuple3.getT3().getClicks().orElse(0.0) - tuple3.getT2()),
+//						tuple3.getT3().getAverageCpc(),
+//						date,
+//						Optional.empty(),
+//						Optional.empty());
+//				})
+//				.log("importAms-logitall")
 				.log("importAms-saveToMongoDB")
 				.flatMap(amsDataRepository::save)
 				.log("importAms-closeParser")
@@ -556,5 +567,73 @@ class LoaderService {
 			reactiveOperations.dropCollection(EbookRoyaltyDataObject.class),
 			reactiveOperations.dropCollection(Book.class),
 			reactiveOperations.dropCollection(KenpReadDataObject.class));
+	}
+
+//	Flux<String> findDuplicatelyNamedAds() {
+//
+//		return adTableRepository.findAll()
+//			.flatMap(adTableObject -> amsDataRepository.findByCampaignName(adTableObject.getCampaignName()))
+//			.groupBy(AmsDataObject::getCampaignName)
+//			.flatMap(campaignNameGroup -> campaignNameGroup
+//				.groupBy(AmsDataObject::getDate)
+//				.flatMap(dateGroup -> Mono.just(campaignNameGroup.key()).zipWith(dateGroup.count()))
+//				.filter(campaignNameOnDateCounts -> campaignNameOnDateCounts.getT2() > 1)
+//				.map(Tuple2::getT1))
+//			.distinct()
+//			.filterWhen()
+//	}
+
+	Mono<Void> normalizeAll() {
+
+		return adTableRepository.findAll()
+			.log("normalizeAll-get-ad-data")
+			.map(AdTableObject::getCampaignName)
+			.log("normalizeAll-get-campaignName")
+			.flatMap(this::normalize)
+			.log("normalizeAll-normalize")
+			.then(Mono.empty());
+	}
+
+	private Mono<Void> normalize(String campaignName) {
+
+		return amsDataRepository.findByCampaignNameOrderByDate(campaignName)
+			.log("normalize-amsdata-" + campaignName)
+			.buffer(3, 1)
+			.log("normalize-buffer(3,1)-" + campaignName)
+			.flatMap(amsDataObjects -> {
+				if (amsDataObjects.size() == 3) {
+					AmsDataObject prev = amsDataObjects.get(0);
+					AmsDataObject current = amsDataObjects.get(1);
+					AmsDataObject next = amsDataObjects.get(2);
+
+					log.info("Normalizing " + campaignName + ": " + prev.getDate() + " -> " + current.getDate() + " -> " + next.getDate());
+
+					prev.setNextDate(Optional.of(current.getDate()));
+					current.setPreviousDate(Optional.of(prev.getDate()));
+
+					current.setNextDate(Optional.of(next.getDate()));
+					next.setPreviousDate(Optional.of(current.getDate()));
+
+					current.setImpressions(
+						Optional.of(current.getRawImpressions().orElse(0.0) - prev.getRawImpressions().orElse(0.0)));
+					current.setClicks(
+						Optional.of(current.getRawClicks().orElse(0.0) - prev.getRawClicks().orElse(0.0)));
+
+					next.setImpressions(
+						Optional.of(next.getRawImpressions().orElse(0.0) - current.getRawImpressions().orElse(0.0)));
+					next.setClicks(
+						Optional.of(next.getRawClicks().orElse(0.0) - current.getRawClicks().orElse(0.0)));
+
+					return Mono.when(
+						reactiveOperations.save(prev),
+						reactiveOperations.save(current),
+						reactiveOperations.save(next))
+						.log("normalize-save-" + campaignName);
+				} else {
+					return Mono.just(amsDataObjects);
+				}
+			})
+			.log("normalize-process-" + campaignName)
+			.then(Mono.empty());
 	}
 }

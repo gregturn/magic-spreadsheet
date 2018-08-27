@@ -29,6 +29,10 @@ interface AmsDataRepository extends ReactiveMongoRepository<AmsDataObject, Strin
 
 	Flux<AmsDataObject> findByCampaignName(String campaignName);
 
+	Flux<AmsDataObject> findByCampaignNameOrderByDate(String campaignName);
+
+	Mono<Boolean> existsByCampaignNameAndStatus(String campaignName, String status);
+
 	Flux<AmsDataObject> findByCampaignNameAndDateAfter(String campaignName, LocalDate date);
 	
 	Flux<AmsDataObject> findByDateAfter(LocalDate date, Sort sort);

@@ -49,8 +49,20 @@ public class AmsDataDTO {
 			.orElse("");
 	}
 
+	public String getRawImpressions() {
+		return this.object.getRawImpressions()
+			.map(Object::toString)
+			.orElse("");
+	}
+
 	public String getClicks() {
 		return this.object.getClicks()
+			.map(Object::toString)
+			.orElse("");
+	}
+
+	public String getRawClicks() {
+		return this.object.getRawClicks()
 			.map(Object::toString)
 			.orElse("");
 	}
@@ -67,5 +79,19 @@ public class AmsDataDTO {
 
 	public LocalDate getDate() {
 		return this.object.getDate();
+	}
+
+	public String getPreviousDate() {
+
+		return this.object.getPreviousDate()
+			.map(LocalDate::toString)
+			.orElse("");
+	}
+
+	public String getNextDate() {
+
+		return this.object.getNextDate()
+			.map(LocalDate::toString)
+			.orElse("");
 	}
 }
