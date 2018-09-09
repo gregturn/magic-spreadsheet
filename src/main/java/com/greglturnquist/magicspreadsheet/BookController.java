@@ -64,6 +64,7 @@ class BookController {
 			.map(book -> {
 				book.setBookShort(bookShort.getBookShort());
 				book.setSeries(bookShort.getBookSeries());
+				book.setSeriesNumber(bookShort.getBookSeriesNumber());
 				book.setKENPC(bookShort.getKenpc());
 				return book;
 			})
@@ -107,6 +108,7 @@ class BookController {
 				adLinkingParams.getAuthor(),
 				adLinkingParams.getBookShort(),
 				adLinkingParams.getSeries(),
+				null,
 				adLinkingParams.getASIN(),
 				adLinkingParams.getKENPC()
 			)))

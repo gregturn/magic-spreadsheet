@@ -37,6 +37,7 @@ class Book {
 	String author;
 	String bookShort;
 	String series;
+	Integer seriesNumber;
 	String ASIN;
 	double KENPC;
 
@@ -49,6 +50,7 @@ class Book {
 		"",
 		"",
 		"",
+		null,
 		"",
 		0.1
 	);

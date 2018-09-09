@@ -24,6 +24,7 @@
                 <th>Author</th>
                 <th>Short</th>
                 <th>Series</th>
+                <th>Series #</th>
                 <th>ASIN</th>
                 <th>KENPC</th>
                 <th>Ad Chart</th>
@@ -37,6 +38,7 @@
                 <td th:text="${book.author}" />
                 <td th:text="${book.bookShort}" />
                 <td th:text="${book.series}" />
+                <td th:text="${book.seriesNumber}" />
                 <td th:text="${book.ASIN}" />
                 <td th:text="${book.KENPC}" />
                 <td><a th:href="@{'/adChart/' + ${book.title}}" th:text="${book.title}"></a></td>
@@ -44,6 +46,7 @@
                     <form th:action="@{/setBookShort}" th:method="post">
                         <input name="bookShort" th:value="${book.bookShort}" placeholder="Short" />
                         <input name="bookSeries" th:value="${book.series}" placeholder="Series" />
+                        <input name="bookSeriesNumber" th:value="${book.seriesNumber}" placeholder="Series #" />
                         <input name="kenpc" th:value="${book.KENPC}" placeholder="KEPNC" />
                         <button name="bookTitle" th:value="${book.title}">Set Details</button>
                     </form>

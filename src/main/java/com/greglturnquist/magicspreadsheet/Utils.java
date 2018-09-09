@@ -64,6 +64,7 @@ class Utils {
 			ebookRoyaltyDataObject.getAuthorName(),
 			"",
 			"",
+			-1,
 			ebookRoyaltyDataObject.getASIN(),
 			0.1
 		);
@@ -129,5 +130,14 @@ class Utils {
 		return repository.findByCampaignNameAndDateBetween(title, date1, date2)
 			.map(amsDataObject -> amsDataObject.getClicks().orElse(0.0))
 			.reduce(0.0, (subtotal, clicks) -> subtotal + clicks);
+	}
+
+	static Double unitsSoldViaPageReads(Double kenpc, Double totalPageReads) {
+
+		if (kenpc >= 1.0) {
+			return totalPageReads / kenpc;
+		} else {
+			return 0.0;
+		}
 	}
 }

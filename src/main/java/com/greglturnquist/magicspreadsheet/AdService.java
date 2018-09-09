@@ -16,6 +16,7 @@
 package com.greglturnquist.magicspreadsheet;
 
 import static com.greglturnquist.magicspreadsheet.Utils.*;
+import static reactor.function.TupleUtils.*;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -74,17 +75,43 @@ class AdService {
 			unitsSold(book.getTitle(), date),
 			totalPagesRead(book.getTitle(), date),
 			totalAdSpend(book.getTitle(), date),
-			totalEarnings(book.getTitle(), date))
+			totalEarnings(book.getTitle(), date),
+			seriesReadThrough(book, date))
 
-			.map(objects -> new BookDTO(
+			.map(function((adPerformance, unitsSold, totalPagedRead, adSpend, earnings, seriesReadThrough) -> new BookDTO(
 				book.getTitle(),
-				objects.getT1(),
-				objects.getT2(),
-				objects.getT3(),
+				adPerformance,
+				unitsSold,
+				totalPagedRead,
 				book.getKENPC(),
-				objects.getT4(),
-				objects.getT5()));
+				adSpend,
+				earnings,
+				seriesReadThrough
+			)));
 	}
+
+	private Mono<Double> seriesReadThrough(Book book, Optional<LocalDate> date) {
+
+		return Optional.ofNullable(book.getSeriesNumber())
+			.map(seriesNumber -> bookRepository.findBySeriesAndSeriesNumber(book.getSeries(), seriesNumber+1))
+			.orElse(Mono.empty())
+			.flatMap(nextInSeries ->
+				Mono.zip(
+					Mono.just(book),
+					unitsSold(book.getTitle(), date),
+					totalPagesRead(book.getTitle(), date),
+					Mono.just(nextInSeries),
+					unitsSold(nextInSeries.getTitle(), date),
+					totalPagesRead(nextInSeries.getTitle(), date)
+				))
+			.flatMap(function((firstBook, unitsSoldOfFirstBook, totalPagesReadOfFirstBook,
+							   secondBook, unitsSoldOfSecondBook, totalPagesReadOfSecondBook) ->
+				Mono.just(
+					(unitsSoldOfSecondBook + unitsSoldViaPageReads(secondBook.getKENPC(), totalPagesReadOfSecondBook)) /
+					(unitsSoldOfFirstBook + unitsSoldViaPageReads(firstBook.getKENPC(), totalPagesReadOfFirstBook)))))
+			.switchIfEmpty(Mono.just(0.0));
+	}
+
 
 	private Mono<Double> unitsSold(String bookTitle, Optional<LocalDate> date) {
 

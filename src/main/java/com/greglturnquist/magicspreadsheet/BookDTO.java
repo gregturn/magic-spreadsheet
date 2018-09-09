@@ -38,6 +38,7 @@ class BookDTO {
 	@JsonIgnore double kenpc;
 	double totalAdSpend;
 	double totalEarnings;
+	double seriesReadThrough;
 
 	public String getConversionRate() {
 		if (this.adPerformanceStats.getClicks() == 0.0) {
@@ -48,12 +49,7 @@ class BookDTO {
 	}
 
 	public double getUnitsSoldViaPageReads() {
-
-		if (this.kenpc >= 1.0) {
-			return this.totalPageReads / this.kenpc;
-		} else {
-			return 0.0;
-		}
+		return Utils.unitsSoldViaPageReads(this.kenpc, this.totalPageReads);
 	}
 
 	public double getUnitsSoldTotal() {
@@ -91,5 +87,14 @@ class BookDTO {
 		}
 		
 		return this.getRawROI() * 100.0 + "%";
+	}
+
+	public String getSeriesReadThroughPercentage() {
+
+		if (this.seriesReadThrough == 0.0) {
+			return "";
+		}
+		
+		return this.seriesReadThrough * 100.0 + "%";
 	}
 }

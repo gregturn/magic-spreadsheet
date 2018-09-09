@@ -28,5 +28,6 @@ class BookAndShort {
 	String bookShort;
 	String bookTitle;
 	String bookSeries;
+	Integer bookSeriesNumber;
 	double kenpc;
 }

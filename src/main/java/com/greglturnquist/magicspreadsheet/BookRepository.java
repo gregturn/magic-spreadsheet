@@ -26,4 +26,6 @@ interface BookRepository extends ReactiveMongoRepository<Book, String> {
 	Mono<Book> findByTitle(String title);
 
 	Mono<Book> deleteByTitle(String title);
+
+	Mono<Book> findBySeriesAndSeriesNumber(String seriesName, int seriesNumber);
 }

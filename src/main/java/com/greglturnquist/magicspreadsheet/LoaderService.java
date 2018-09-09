@@ -236,6 +236,7 @@ class LoaderService {
 						MagicSpreadsheetBookSetupColumn.AuthorName.stringValue(row),
 						MagicSpreadsheetBookSetupColumn.BookShort.stringValue(row),
 						MagicSpreadsheetBookSetupColumn.SeriesTitle.stringValue(row),
+						null,
 						MagicSpreadsheetBookSetupColumn.AmazonASIN.stringValue(row),
 						MagicSpreadsheetBookSetupColumn.KENPC.numericValue(row));
 				} catch (IllegalStateException|IllegalArgumentException e) {
