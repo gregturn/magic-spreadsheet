@@ -110,6 +110,53 @@ class AdController {
 		return Mono.just("conversions");
 	}
 
+	@GetMapping("/seriesConversions")
+	Mono<String> seriesConversions(@RequestParam(name = "window", required = false) Optional<String> optionalWindow, Model model) {
+
+		String window = optionalWindow.orElse("all");
+
+		model.addAttribute("filterOptions", Arrays.asList(
+			new FilterOption("all", "Lifetime", window.equals("all")),
+			new FilterOption("90days", "Last 90 days", window.equals("90days")),
+			new FilterOption("45days", "Last 45 days", window.equals("45days")),
+			new FilterOption("30days", "Last 30 days", window.equals("30days")),
+			new FilterOption("15days", "Last 15 days", window.equals("15days"))
+		));
+
+		if ("all".equals(window)) {
+
+			model.addAttribute("conversionData",
+				adService.clicksToConvertPerSeries(Optional.empty())
+					.sort((o1, o2) -> Double.compare(o2.getRawROI(), o1.getRawROI())));
+
+		} else if ("90days".equals(window)) {
+
+			model.addAttribute("conversionData",
+				adService.clicksToConvertPerSeries(Optional.of(LocalDate.now().minusDays(90)))
+					.sort((o1, o2) -> Double.compare(o2.getRawROI(), o1.getRawROI())));
+
+		} else if ("45days".equals(window)) {
+
+			model.addAttribute("conversionData",
+				adService.clicksToConvertPerSeries(Optional.of(LocalDate.now().minusDays(45)))
+					.sort((o1, o2) -> Double.compare(o2.getRawROI(), o1.getRawROI())));
+
+		} else if ("30days".equals(window)) {
+
+			model.addAttribute("conversionData",
+				adService.clicksToConvertPerSeries(Optional.of(LocalDate.now().minusDays(30)))
+					.sort((o1, o2) -> Double.compare(o2.getRawROI(), o1.getRawROI())));
+
+		} else if ("15days".equals(window)) {
+
+			model.addAttribute("conversionData",
+				adService.clicksToConvertPerSeries(Optional.of(LocalDate.now().minusDays(15)))
+					.sort((o1, o2) -> Double.compare(o2.getRawROI(), o1.getRawROI())));
+		}
+
+		return Mono.just("seriesConversions");
+	}
+
 	@GetMapping("/adChart/{title}")
 	Mono<String> adPerformance(@PathVariable String title, Model model) {
 

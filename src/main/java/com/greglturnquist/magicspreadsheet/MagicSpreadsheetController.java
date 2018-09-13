@@ -188,6 +188,15 @@ public class MagicSpreadsheetController {
 				.map(adSpend -> new EarningsService.TotalSales(end, 100.0 * (revenue - adSpend) / adSpend)));
 	}
 
+	private Mono<EarningsService.TotalSales> roiPerSeries(String seriesName, LocalDate beginning, LocalDate end) {
+
+		return earningsService.totalCombinedRevenuePerSeries(seriesName, beginning, end)
+			.map(EarningsService.TotalSales::getTotal)
+			.flatMap(revenue -> adService.totalAdSpendPerSeries(seriesName, beginning, end)
+				.map(EarningsService.TotalSales::getTotal)
+				.map(adSpend -> new EarningsService.TotalSales(end, 100.0 * (revenue - adSpend) / adSpend)));
+	}
+
 	@GetMapping("/unlinkedAds")
 	Mono<String> unlinkedAds(Model model) {
 

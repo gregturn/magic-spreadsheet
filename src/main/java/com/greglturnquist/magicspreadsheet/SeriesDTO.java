@@ -27,18 +27,17 @@ import com.fasterxml.jackson.annotation.JsonUnwrapped;
  */
 @Value
 @AllArgsConstructor
-@JsonPropertyOrder({"title", "adPerformanceStats", "totalPageReads", "unitsSold",
+@JsonPropertyOrder({"seriesName", "adPerformanceStats", "totalPageReads", "unitsSold",
 	"unitsSoldViaPageReads", "unitsSoldTotal", "clickThroughRate", "conversionRate", "totalAdSpend", "totalEarnings", "ROI"})
-class BookDTO {
+class SeriesDTO {
 
-	String title;
+	String seriesName;
 	@JsonUnwrapped AdPerformanceStats adPerformanceStats;
 	double unitsSold;
 	@JsonIgnore double totalPageReads;
 	@JsonIgnore double unitsSoldViaPageReads;
 	double totalAdSpend;
 	double totalEarnings;
-	double seriesReadThrough;
 
 	public String getConversionRate() {
 		if (this.adPerformanceStats.getClicks() == 0.0) {
@@ -83,14 +82,5 @@ class BookDTO {
 		}
 		
 		return String.format("%.1f%%", this.getRawROI() * 100.0);
-	}
-
-	public String getSeriesReadThroughPercentage() {
-
-		if (this.seriesReadThrough == 0.0) {
-			return "";
-		}
-		
-		return String.format("%.1f%%", this.seriesReadThrough * 100.0);
 	}
 }

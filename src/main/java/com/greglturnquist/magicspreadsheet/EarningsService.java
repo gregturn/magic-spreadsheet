@@ -15,6 +15,8 @@
  */
 package com.greglturnquist.magicspreadsheet;
 
+import static reactor.function.TupleUtils.function;
+
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
@@ -38,12 +40,15 @@ class EarningsService {
 
 	private final EbookRoyaltyRepository ebookRoyaltyRepository;
 	private final KenpReadRepository kenpReadRepository;
+	private final BookRepository bookRepository;
 
 	EarningsService(EbookRoyaltyRepository ebookRoyaltyRepository,
-					KenpReadRepository kenpReadRepository) {
+					KenpReadRepository kenpReadRepository,
+					BookRepository bookRepository) {
 
 		this.ebookRoyaltyRepository = ebookRoyaltyRepository;
 		this.kenpReadRepository = kenpReadRepository;
+		this.bookRepository = bookRepository;
 	}
 
 	Mono<Double> unitSales(String title, LocalDate royaltyDate) {
@@ -151,6 +156,14 @@ class EarningsService {
 			.map(aDouble -> new TotalSales(end, aDouble));
 	}
 
+	Mono<TotalSales> totalRevenuePerSeries(String seriesName, LocalDate beginning, LocalDate end) {
+
+		return bookRepository.findBySeries(seriesName)
+			.flatMap(book -> totalRevenue(book.getTitle(), beginning, end))
+			.reduce(new TotalSales(end, 0.0),
+				(totalSales, totalSales2) -> new TotalSales(end, totalSales.getTotal() + totalSales2.getTotal()));
+	}
+
 	Mono<TotalSales> totalPageReads(String title, LocalDate beginning, LocalDate end) {
 
 		return kenpReadRepository.findByTitleAndOrderDateBetween(title, beginning, end)
@@ -166,12 +179,29 @@ class EarningsService {
 			.map(aDouble -> new TotalSales(end, aDouble));
 	}
 
+	Mono<TotalSales> totalPageRevenuePerSeries(String seriesName, LocalDate beginning, LocalDate end) {
+
+		return bookRepository.findBySeries(seriesName)
+			.flatMap(book -> totalPageRevenue(book.getTitle(), beginning, end))
+			.reduce(new TotalSales(end, 0.0),
+				(totalSales, totalSales2) -> new TotalSales(end, totalSales.getTotal() + totalSales2.getTotal()));
+	}
+
 	Mono<TotalSales> totalCombinedRevenue(String title, LocalDate beginning, LocalDate end) {
 
 		return totalRevenue(title, beginning, end)
-			.flatMap(totalSales -> totalPageRevenue(title, beginning, end)
-				.map(totalSales2 -> Tuples.of(totalSales.getTotal(), totalSales2.getTotal())))
-			.map(objects -> objects.getT1() + objects.getT2())
+			.flatMap(ebookSales -> totalPageRevenue(title, beginning, end)
+				.map(pageReadSales -> Tuples.of(ebookSales.getTotal(), pageReadSales.getTotal())))
+			.map(function((ebookRevenue, pageReadRevenue) -> ebookRevenue + pageReadRevenue))
+			.map(totalRevenue -> new TotalSales(end, totalRevenue));
+	}
+
+	Mono<TotalSales> totalCombinedRevenuePerSeries(String seriesName, LocalDate beginning, LocalDate end) {
+
+		return totalRevenuePerSeries(seriesName, beginning, end)
+			.flatMap(ebookSales -> totalPageRevenuePerSeries(seriesName, beginning, end)
+				.map(pageReadSales -> Tuples.of(ebookSales.getTotal(), pageReadSales.getTotal())))
+			.map(function((ebookRevenue, pageReadRevenue) -> ebookRevenue + pageReadRevenue))
 			.map(aDouble -> new TotalSales(end, aDouble));
 	}
 

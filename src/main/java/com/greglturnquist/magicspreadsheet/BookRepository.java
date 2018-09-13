@@ -15,6 +15,7 @@
  */
 package com.greglturnquist.magicspreadsheet;
 
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
 
@@ -26,6 +27,8 @@ interface BookRepository extends ReactiveMongoRepository<Book, String> {
 	Mono<Book> findByTitle(String title);
 
 	Mono<Book> deleteByTitle(String title);
+
+	Flux<Book> findBySeries(String seriesName);
 
 	Mono<Book> findBySeriesAndSeriesNumber(String seriesName, int seriesNumber);
 }

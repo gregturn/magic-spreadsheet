@@ -68,25 +68,56 @@ class AdService {
 			.flatMap(book -> clicksToConvert(book, date));
 	}
 
+	Flux<SeriesDTO> clicksToConvertPerSeries(Optional<LocalDate> date) {
+
+		return bookRepository.findAll()
+			.map(Book::getSeries)
+			.filter(StringUtils::hasText)
+			.distinct()
+			.flatMap(seriesName -> clicksToConvertPerSeries(seriesName, date));
+	}
+
 	Mono<BookDTO> clicksToConvert(Book book, Optional<LocalDate> date) {
 
 		return Mono.zip(
 			adPerformance(book.getTitle(), date),
 			unitsSold(book.getTitle(), date),
 			totalPagesRead(book.getTitle(), date),
+			totalUnitsSoldViaPageReads(book.getTitle(), date),
 			totalAdSpend(book.getTitle(), date),
 			totalEarnings(book.getTitle(), date),
 			seriesReadThrough(book, date))
 
-			.map(function((adPerformance, unitsSold, totalPagedRead, adSpend, earnings, seriesReadThrough) -> new BookDTO(
+			.map(function((adPerformance, unitsSold, totalPagedRead, unitsSoldViaPageReads, adSpend, earnings, seriesReadThrough) -> new BookDTO(
 				book.getTitle(),
 				adPerformance,
 				unitsSold,
 				totalPagedRead,
-				book.getKENPC(),
+				unitsSoldViaPageReads,
 				adSpend,
 				earnings,
 				seriesReadThrough
+			)));
+	}
+
+	Mono<SeriesDTO> clicksToConvertPerSeries(String seriesName, Optional<LocalDate> date) {
+
+		return Mono.zip(
+			adPerformancePerSeries(seriesName, date),
+			unitsSoldPerSeries(seriesName, date),
+			totalPagesReadPerSeries(seriesName, date),
+			totalUnitsSoldViaPageReadsPerSeries(seriesName, date),
+			totalAdSpendPerSeries(seriesName, date),
+			totalEarningsPerSeries(seriesName, date))
+
+			.map(function((adPerformance, unitsSold, totalPagesRead, unitsSoldViaPageReads, adSpend, earnings) -> new SeriesDTO(
+				seriesName,
+				adPerformance,
+				unitsSold,
+				totalPagesRead,
+				unitsSoldViaPageReads,
+				adSpend,
+				earnings
 			)));
 	}
 
@@ -112,7 +143,6 @@ class AdService {
 			.switchIfEmpty(Mono.just(0.0));
 	}
 
-
 	private Mono<Double> unitsSold(String bookTitle, Optional<LocalDate> date) {
 
 		return date
@@ -121,12 +151,44 @@ class AdService {
 			.reduce(0.0, (counter, ebookRoyaltyData) -> counter + ebookRoyaltyData.getNetUnitsSold());
 	}
 
+	private Mono<Double> unitsSoldPerSeries(String seriesName, Optional<LocalDate> date) {
+
+		return bookRepository.findBySeries(seriesName)
+			.map(Book::getTitle)
+			.flatMap(title -> unitsSold(title, date))
+			.reduce(0.0, (total, unitsSold) -> total + unitsSold);
+	}
+
 	private Mono<Double> totalPagesRead(String bookTitle, Optional<LocalDate> date) {
 
 		return date
 			.map(after -> kenpReadRepository.findByTitleLikeAndOrderDateAfter(bookTitle, after))
 			.orElse(kenpReadRepository.findByTitleLike(bookTitle))
 			.reduce(0.0, (counter, kenpReadData) -> counter + kenpReadData.getPagesRead());
+	}
+
+	private Mono<Double> totalPagesReadPerSeries(String seriesName, Optional<LocalDate> date) {
+
+		return bookRepository.findBySeries(seriesName)
+			.map(book -> book.getTitle())
+			.flatMap(title -> totalPagesRead(title, date))
+			.reduce(0.0, (total, pagesRead) -> total + pagesRead);
+	}
+
+	private Mono<Double> totalUnitsSoldViaPageReads(String bookTitle, Optional<LocalDate> date) {
+
+		return totalPagesRead(bookTitle, date)
+			.flatMap(pagesRead -> bookRepository.findByTitle(bookTitle)
+				.map(book -> book.getKENPC())
+				.map(kenpc -> Utils.unitsSoldViaPageReads(kenpc, pagesRead)));
+	}
+
+	private Mono<Double> totalUnitsSoldViaPageReadsPerSeries(String seriesName, Optional<LocalDate> date) {
+
+		return bookRepository.findBySeries(seriesName)
+			.map(Book::getTitle)
+			.flatMap(title -> totalUnitsSoldViaPageReads(title, date))
+			.reduce(0.0, (total, unitsSold) -> total + unitsSold);
 	}
 
 	private Mono<Double> totalClicks(String bookTitle, Optional<LocalDate> date) {
@@ -167,6 +229,17 @@ class AdService {
 						.orElse(adPerformanceStats.getClicks())));
 	}
 
+	private Mono<AdPerformanceStats> adPerformancePerSeries(String seriesName, Optional<LocalDate> date) {
+
+		return bookRepository.findBySeries(seriesName)
+			.map(Book::getTitle)
+			.flatMap(title -> adPerformance(title, date))
+			.reduce(new AdPerformanceStats(0.0, 0.0),
+				(adPerformanceStats, adPerformanceStats2) -> new AdPerformanceStats(
+					adPerformanceStats.getImpressions() + adPerformanceStats2.getImpressions(),
+					adPerformanceStats.getClicks() + adPerformanceStats2.getClicks()));
+	}
+
 	Mono<Double> totalAdSpend(String bookTitle, Optional<LocalDate> date) {
 
 		return adTableRepository.findByBookTitle(bookTitle)
@@ -177,6 +250,14 @@ class AdService {
 				amsDataObject.getClicks().orElse(0.0) * amsDataObject.getAverageCpc().orElse(0.0));
 	}
 
+	Mono<Double> totalAdSpendPerSeries(String seriesName, Optional<LocalDate> date) {
+
+		return bookRepository.findBySeries(seriesName)
+			.map(Book::getTitle)
+			.flatMap(title -> totalAdSpend(title, date))
+			.reduce(0.0, (total, adSpend) -> total + adSpend);
+	}
+
 	Mono<EarningsService.TotalSales> totalAdSpend(String title, LocalDate beginning, LocalDate end) {
 
 		return adTableRepository.findByBookTitle(title)
@@ -184,6 +265,14 @@ class AdService {
 			.reduce(0.0, (totalAdSpend, amsDataObject) -> totalAdSpend +
 				amsDataObject.getClicks().orElse(0.0) * amsDataObject.getAverageCpc().orElse(0.0))
 			.map(totalAdSpend -> new EarningsService.TotalSales(end, totalAdSpend));
+	}
+
+	Mono<EarningsService.TotalSales> totalAdSpendPerSeries(String seriesName, LocalDate beginning, LocalDate end) {
+
+		return bookRepository.findBySeries(seriesName)
+			.flatMap(book -> totalAdSpend(book.getTitle(), beginning, end))
+			.reduce(new EarningsService.TotalSales(end, 0.0),
+				(totalSales, totalSales2) -> new EarningsService.TotalSales(end, totalSales.getTotal() + totalSales2.getTotal()));
 	}
 
 	private Mono<Double> totalEarnings(String bookTitle, Optional<LocalDate> date) {
@@ -202,6 +291,14 @@ class AdService {
 			log.info(bookTitle + ": Totaling up $" + royalties + " along with " + pagesRead + " pages read");
 			return royalties + pagesRead * KU_RATE;
 		});
+	}
+
+	private Mono<Double> totalEarningsPerSeries(String seriesName, Optional<LocalDate> date) {
+
+		return bookRepository.findBySeries(seriesName)
+			.map(Book::getTitle)
+			.flatMap(title -> totalEarnings(title, date))
+			.reduce(0.0, (total, earnings) -> total + earnings);
 	}
 
 	Mono<Double> impressions(String title, LocalDate date) {
