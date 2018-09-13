@@ -44,7 +44,7 @@ class BookDTO {
 		if (this.adPerformanceStats.getClicks() == 0.0) {
 			return "No clicks were used in the selling of this product";
 		} else {
-			return "1:" + this.adPerformanceStats.getClicks() / getUnitsSoldTotal();
+			return "1:" + String.format("%.1f", this.adPerformanceStats.getClicks() / getUnitsSoldTotal());
 		}
 	}
 
@@ -65,11 +65,11 @@ class BookDTO {
 	}
 
 	public String getTotalAdSpend() {
-		return "$" + this.totalAdSpend;
+		return String.format("$%.2f", this.totalAdSpend);
 	}
 
 	public String getTotalEarnings() {
-		return "$" + this.totalEarnings;
+		return String.format("$%.2f", this.totalEarnings);
 	}
 
 	public double getRawROI() {
@@ -86,7 +86,7 @@ class BookDTO {
 			return "No sales (terrible)";
 		}
 		
-		return this.getRawROI() * 100.0 + "%";
+		return String.format("%.1f%%", this.getRawROI() * 100.0);
 	}
 
 	public String getSeriesReadThroughPercentage() {
@@ -95,6 +95,6 @@ class BookDTO {
 			return "";
 		}
 		
-		return this.seriesReadThrough * 100.0 + "%";
+		return String.format("%.1f%%", this.seriesReadThrough * 100.0);
 	}
 }

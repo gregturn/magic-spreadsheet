@@ -55,8 +55,8 @@
                 <td th:text="${conversion.adPerformanceStats.clicks}" />
                 <td th:text="${conversion.unitsSold}" />
                 <td th:text="${conversion.totalPageReads}" />
-                <td th:text="${conversion.unitsSoldViaPageReads}" />
-                <td th:text="${conversion.unitsSoldTotal}" />
+                <td th:text="${#numbers.formatDecimal(conversion.unitsSoldViaPageReads, 1, 'COMMA', 1, 'POINT')}" />
+                <td th:text="${#numbers.formatDecimal(conversion.unitsSoldTotal, 1, 'COMMA', 1, 'POINT')}" />
                 <td th:text="${conversion.conversionRate}" />
                 <td th:text="${conversion.totalAdSpend}" />
                 <td th:text="${conversion.totalEarnings}" />

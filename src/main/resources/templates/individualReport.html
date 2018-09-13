@@ -30,7 +30,7 @@
                 </tr>
                 <tr class="unit-sales">
                     <td>7-Day Moving Avg (Unit Sales)</td>
-                    <td th:each="value : ${movingAverageUnitSales}" th:text="${value.average}" th:for="${value.date}"></td>
+                    <td th:each="value : ${movingAverageUnitSales}" th:text="${#numbers.formatDecimal(value.average, 1, 'COMMA', 1, 'POINT')}" th:for="${value.date}"></td>
                 </tr>
                 <tr class="unit-sales">
                     <td th:text="${window + '-Day Sales Total'}" />
@@ -38,70 +38,70 @@
                 </tr>
                 <tr class="unit-sales-revenue">
                     <td>Daily Sales Revenue</td>
-                    <td th:each="unitRoyalty : ${unitRevenue}" th:text="${unitRoyalty.T2}" th:for="${unitRoyalty.T1}"></td>
+                    <td th:each="unitRoyalty : ${unitRevenue}" th:text="${#numbers.formatDecimal(unitRoyalty.T2, 1, 'COMMA', 2, 'POINT')}" th:for="${unitRoyalty.T1}"></td>
                 </tr>
                 <tr class="unit-sales-revenue">
                     <td>7-Day Moving Avg (Sales Revenue)</td>
-                    <td th:each="value : ${movingAverageUnitRevenue}" th:text="${value.average}" th:for="${value.date}"></td>
+                    <td th:each="value : ${movingAverageUnitRevenue}" th:text="${#numbers.formatDecimal(value.average, 1, 'COMMA', 2, 'POINT')}" th:for="${value.date}"></td>
                 </tr>
                 <tr class="unit-sales-revenue">
                     <td th:text="${window + '-Day Sales Revenue Total'}" />
-                    <td th:each="value : ${totalRevenue}" th:text="${value.total}" th:for="${value.date}"></td>
+                    <td th:each="value : ${totalRevenue}" th:text="${#numbers.formatDecimal(value.total, 1, 'COMMA', 2, 'POINT')}" th:for="${value.date}"></td>
                 </tr>
                 <tr class="page-reads">
                     <td>Page Reads</td>
-                    <td th:each="pagesRead : ${pageReads}" th:text="${pagesRead.T2}" th:for="${pagesRead.T1}"></td>
+                    <td th:each="pagesRead : ${pageReads}" th:text="${#numbers.formatDecimal(pagesRead.T2, 1, 'COMMA', 1, 'POINT')}" th:for="${pagesRead.T1}"></td>
                 </tr>
                 <tr class="page-reads">
                     <td>7-Day Moving Avg (Page Reads)</td>
-                    <td th:each="value : ${movingAveragePageReads}" th:text="${value.average}" th:for="${value.date}"></td>
+                    <td th:each="value : ${movingAveragePageReads}" th:text="${#numbers.formatDecimal(value.average, 1, 'COMMA', 1, 'POINT')}" th:for="${value.date}"></td>
                 </tr>
                 <tr class="page-reads">
                     <td th:text="${window + '-Day Page Reads Total'}" />
-                    <td th:each="value : ${totalPageReads}" th:text="${value.total}" th:for="${value.date}"></td>
+                    <td th:each="value : ${totalPageReads}" th:text="${#numbers.formatDecimal(value.total, 1, 'COMMA', 1, 'POINT')}" th:for="${value.date}"></td>
                 </tr>
                 <tr class="page-reads">
                     <td>Estimated Revenue</td>
-                    <td th:each="value : ${estimatedRevenue}" th:text="${value.T2}" th:for="${value.T1}"></td>
+                    <td th:each="value : ${estimatedRevenue}" th:text="${#numbers.formatDecimal(value.T2, 1, 'COMMA', 2, 'POINT')}" th:for="${value.T1}"></td>
                 </tr>
                 <tr class="page-reads">
                     <td>7-Day Moving Avg (Page Revenue)</td>
-                    <td th:each="value : ${movingAveragePageRevenue}" th:text="${value.average}" th:for="${value.date}"></td>
+                    <td th:each="value : ${movingAveragePageRevenue}" th:text="${#numbers.formatDecimal(value.average, 1, 'COMMA', 2, 'POINT')}" th:for="${value.date}"></td>
                 </tr>
                 <tr class="total">
                     <td>Gross Revenue</td>
-                    <td th:each="value : ${combinedRevenue}" th:text="${value.T2}" th:for="${value.T1}"></td>
+                    <td th:each="value : ${combinedRevenue}" th:text="${#numbers.formatDecimal(value.T2, 1, 'COMMA', 2, 'POINT')}" th:for="${value.T1}"></td>
                 </tr>
                 <tr class="total">
                     <td th:text="${'Running ' + window + '-Day Total'}" />
-                    <td th:each="value : ${totalGrossRevenue}" th:text="${value.total}" th:for="${value.date}"></td>
+                    <td th:each="value : ${totalGrossRevenue}" th:text="${#numbers.formatDecimal(value.total, 1, 'COMMA', 2, 'POINT')}" th:for="${value.date}"></td>
                 </tr>
                 <tr class="ads-for">
                     <td>Ads for</td>
                 </tr>
                 <tr class="ad-stats">
                     <td>Impressions</td>
-                    <td th:each="value : ${impressions}" th:text="${value.T2}" th:for="${value.T1}"></td>
+                    <td th:each="value : ${impressions}" th:text="${#numbers.formatDecimal(value.T2, 1, 'COMMA', 1, 'POINT')}" th:for="${value.T1}"></td>
                 </tr>
                 <tr class="ad-stats">
                     <td>Clicks</td>
-                    <td th:each="value : ${clicks}" th:text="${value.T2}" th:for="${value.T1}"></td>
+                    <td th:each="value : ${clicks}" th:text="${#numbers.formatDecimal(value.T2, 1, 'COMMA', 1, 'POINT')}" th:for="${value.T1}"></td>
                 </tr>
                 <tr class="ad-stats">
                     <td>Spend</td>
-                    <td th:each="value : ${spend}" th:text="${value.T2}" th:for="${value.T1}"></td>
+                    <td th:each="value : ${spend}" th:text="${#numbers.formatDecimal(value.T2, 1, 'COMMA', 2, 'POINT')}" th:for="${value.T1}"></td>
                 </tr>
                 <tr class="ad-stats">
                     <td>Ad Count (Only impressions > 1000)</td>
-                    <td th:each="value : ${adCount}" th:text="${value.T2}" th:for="${value.T1}"></td>
+                    <td th:each="value : ${adCount}" th:text="${#numbers.formatDecimal(value.T2, 1, 'COMMA', 1, 'POINT')}" th:for="${value.T1}"></td>
                 </tr>
                 <tr class="roi">
                     <td th:text="${'Running ' + window + '-Day Spend'}" />
-                    <td th:each="value : ${totalAdSpend}" th:text="${value.total}" th:for="${value.date}"></td>
+                    <td th:each="value : ${totalAdSpend}" th:text="${#numbers.formatDecimal(value.total, 1, 'COMMA', 1, 'POINT')}" th:for="${value.date}"></td>
                 </tr>
                 <tr class="roi">
                     <td>Running ROI</td>
-                    <td th:each="value : ${roi}" th:text="'' + ${value.total} + '%'" th:for="${value.date}"></td>
+                    <td th:each="value : ${roi}" th:text="'' + ${#numbers.formatDecimal(value.total, 1, 'COMMA', 1, 'POINT')} + '%'" th:for="${value.date}"></td>
                 </tr>
             </tbody>
         </table>
