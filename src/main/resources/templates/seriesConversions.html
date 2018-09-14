@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <title>Magic Spreadsheet - Spring Boot style</title>
     <link rel="stylesheet" href="/main.css" />
+    <script src="https://www.kryogenix.org/code/browser/sorttable/sorttable.js"></script>
 </head>
 <body>
 
@@ -31,7 +32,7 @@
     </div>
     
     <div>
-        <table>
+        <table class="sortable">
             <thead>
             <tr>
                 <th>Series Name</th>
@@ -49,7 +50,7 @@
             </thead>
             <tbody>
             <tr th:each="conversion : ${conversionData}">
-                <td th:text="${conversion.seriesName}" />
+                <td th:text="${conversion.seriesName}" class="name" />
                 <td th:text="${conversion.adPerformanceStats.impressions}" />
                 <td th:text="${conversion.adPerformanceStats.clicks}" />
                 <td th:text="${conversion.unitsSold}" />
@@ -64,6 +65,17 @@
             </tbody>
         </table>
     </div>
+
+    <script th:inline="javascript">
+		/*<![CDATA[*/
+        (function() { // IIFE
+
+        	console.log('Here we are!');
+
+
+        }());
+		/*]]>*/
+    </script>
 
 </body>
 </html>
